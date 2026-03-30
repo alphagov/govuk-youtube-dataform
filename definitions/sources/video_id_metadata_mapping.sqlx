@@ -1,0 +1,62 @@
+config {
+  type: "view",
+  description: "A mapping table containing comprehensive metadata for each video_id.",
+  assertions: {
+    uniqueKey: ["video_id"],
+    nonNull: ["video_id", "title", "publishedAt"]
+  },
+  columns: {
+    video_id: "Unique alphanumeric identifier for the YouTube video",
+    title: "The title of the video",
+    publishedAt: "The date and time the video was published (ISO 8601 format)",
+    description: "The text description provided for the video",
+    tags: "A list of keyword tags associated with the video",
+    categoryId: "The numeric YouTube category ID",
+    categoryTitle: "The human-readable name of the video category",
+    channelTitle: "The name of the YouTube channel that uploaded the video",
+    channelId: "The unique ID of the YouTube channel",
+    defaultLanguage: "The default language for the video's metadata",
+    defaultAudioLanguage: "The default language of the video's audio track",
+    duration: "The length of the video in ISO 8601 duration format",
+    duration_in_seconds: "The length of the video converted to total seconds",
+    definition: "Indicates if the video is available in high definition (hd) or standard definition (sd)",
+    caption: "Indicates whether captions are available for the video",
+    regionRestriction_allowed: "A list of country codes where the video is viewable",
+    regionRestriction_blocked: "A list of country codes where the video is blocked",
+    viewCount: "The total number of views the video has received",
+    likeCount: "The total number of likes the video has received",
+    commentCount: "The total number of comments on the video",
+    favoriteCount: "The number of times the video has been added to users' favorites",
+    privacyStatus: "The privacy status of the video (public, private, or unlisted)",
+    madeForKids: "Boolean flag indicating if the video is designated as 'made for kids'",
+    embeddable: "Boolean flag indicating if the video can be embedded on third-party sites"
+  }
+}
+
+SELECT
+  video_id,
+  title,
+  publishedAt,
+  description,
+  tags,
+  categoryId,
+  categoryTitle,
+  channelTitle,
+  channelId,
+  defaultLanguage,
+  defaultAudioLanguage,
+  duration,
+  duration_in_seconds,
+  definition,
+  caption,
+  regionRestriction_allowed,
+  regionRestriction_blocked,
+  viewCount,
+  likeCount,
+  commentCount,
+  favoriteCount,
+  privacyStatus,
+  madeForKids,
+  embeddable
+FROM
+  `gds-social-data.govuk_youtube_channel_staging.video_id_metadata_mapping`
