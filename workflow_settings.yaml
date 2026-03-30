@@ -1,0 +1,7 @@
+defaultProject: gds-social-data
+defaultDataset: social_media
+defaultLocation: europe-west2
+defaultAssertionDataset: social_media_dataform_assertions
+dataformCoreVersion: 3.0.42
+
+
