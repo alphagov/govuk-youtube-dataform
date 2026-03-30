@@ -1,0 +1,38 @@
+
+-- A table that contains the yearly output for playback detials
+config {
+  type: "view",
+  assertions : {
+    uniqueKey: ["video_id","day", "creatorContentType"],
+    nonNull: ["video_id","day", "creatorContentType","engagedViews", "views", "redViews","estimatedMinutesWatched","estimatedRedMinutesWatched", "averageViewDuration","averageViewPercentage"],
+    rowConditions: [
+    ]
+  },
+  columns: {
+    video_id: "the video id",
+    day: "YYYY-MM-DD date of data",
+    creatorContentType: "device type, TV, tablet, modbile, desktop",
+    views: "views where the user watches a portion of the video",
+    engagedViews: "engaged Views where a user has seen the thumbnail/port of the video autoplaying via thumbnail",
+    redViews:"views where the user has the premium Red subscription",
+    estimatedMinutesWatched: "An estimate of the minutes watched, always rounded to the nearest minute",
+    estimatedRedMinutesWatched: "An esimate of the minutes watched by premium Red members, rounded to nearest minute",
+    averageViewDuration: "The average number of seconds a viewer watched a video",
+    averageViewPercentage: "The average percentage of a video viewed"
+  }
+}
+
+SELECT 
+    video_id,
+    day,
+    creatorContentType,
+    views,
+    engagedViews,
+    redViews,
+    estimatedMinutesWatched,
+    estimatedRedMinutesWatched,
+    averageViewDuration,
+    averageViewPercentage
+
+FROM
+ `gds-social-data.govuk_youtube_channel_staging.playback_details`
