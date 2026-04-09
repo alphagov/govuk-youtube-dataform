@@ -1,0 +1,37 @@
+-- A table showing the demographic information for a youtube channel
+config {
+    type: "table",
+    assertions: {
+        uniqueKey: ["date", "channel_id", "video_id", "live_or_on_demand", "subscribed_status", "country_code","age_group","gender"],
+        nonNull: ["date", "channel_id", "video_id", "live_or_on_demand", "subscribed_status", "country_code","age_group","gender","views_percentage"],
+        rowConditions: []
+    },
+    columns: {
+        date: "YYYY-MM-DD date of data",
+        channel_id: "the numeric code of the channel id",
+        video_id: "the UUID for the video",
+        live_or_on_demand: "if the video was stream lived or watched on demand",
+        subscribed_status: "If the user activity for the video id is associated with subscribed users or non subscribed users",
+        country_code: "The ISO country codde for the given country",
+        age_group: "This dimension identifies the age group of the logged-in users associated with the report data.",
+        gender: "This dimension identifies the gender of the logged-in users associated with the report data.",
+        views_percentage: "The percentage of viewers who were logged in when watching the video or playlist."
+    }
+}
+
+  -- A table that contains the data transfer table channel_combined information
+SELECT
+        date,
+        channel_id,
+        video_id,
+        live_or_on_demand,
+        subscribed_status,
+        country_code,
+        age_group,
+        gender,
+        views_percentage
+FROM
+  `gds-social-data.govuk_youtube_channel.p_channel_demographics_a1_govuk_tb`
+WHERE
+  date BETWEEN "2025-12-01"
+  AND "2026-02-28"

@@ -1,0 +1,34 @@
+
+-- A table that contains the data transfer sharing information
+config {
+  type: "table",
+  assertions : {
+    uniqueKey: ["date","channel_id", "video_id", "live_or_on_demand","subscribed_status","country_code","sharing_service"],
+    nonNull: ["date","channel_id", "video_id", "live_or_on_demand","subscribed_status","country_code","sharing_service","shares"],
+    rowConditions: [
+    ]
+  },
+  columns: {
+    date: "YYYY-MM-DD date of data",
+    channel_id: "the numeric code of the channel id",
+    video_id: "the UUID for the video",
+    live_or_on_demand: "if the video was stream lived or watched on demand",
+    subscribed_status: "If the user activity for the video id is associated with subscribed users or non subscribed users",
+    country_code: "The ISO country codde for the given country",
+    sharing_service: "This dimension identifies the service that was used to share videos.",
+    shares: "The number of times that users shared a video through the Share button."
+  }
+}
+
+SELECT 
+    date,
+    channel_id,
+    video_id,
+    live_or_on_demand,
+    subscribed_status,
+    country_code,
+    sharing_service,
+    shares
+    FROM
+ `gds-social-data.govuk_youtube_channel.p_channel_sharing_service_a1_govuk_tb`
+ WHERE date BETWEEN "2025-12-01" AND "2026-02-28"

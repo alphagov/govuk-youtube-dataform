@@ -1,0 +1,18 @@
+
+
+
+Remove nulls from 
+- p_channel_traffic_source_a3_govuk_tb - as anull assertion fails of traffic_source details 
+- video_ids from p_channel_combined_a3_gouk_tb
+- p_channel_reach_combined_a1_govuk_tb - traffic_source_detail can return null
+- p_channel_traffic_source_a3_govuk_tb traffic source detail can return null
+- p_channel_basic_a3_govuk_tb - video_ids can return null
+
+Set up asserts 
+
+Check string date mismatch 
+- p_channel_reach_combined
+find out why p_channel_reach_combined_a1_govuk_tb is not returning rows 
+
+
+

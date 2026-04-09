@@ -1,0 +1,37 @@
+config {
+    type: "table",
+    assertions: {
+        uniqueKey: ["date", "channel_id", "video_id", "device_type", "operating_system", "traffic_source_type", "traffic_source_detail"],
+        nonNull: ["date", "channel_id", "video_id", "device_type", "operating_system", "traffic_source_type"], // traffic_source_detail can return nulls
+        rowConditions: []
+    },
+    columns: {
+        date: "YYYY-MM-DD date of data",
+        channel_id: "the numeric code of the channel id",
+        video_id: "the UUID for the video",
+        device_type: "This dimension identifies the physical form factor of the device on which the view occurred.",
+        operating_system: "This dimension identifies the software system of the device on which the view occurred.",
+        traffic_source_type: "This dimension identifies the referrer type associated with the user activity metrics. The referrer type describes the manner in which users reached the video or channel associated with the row of data in the report.",
+        traffic_source_detail: "This dimension provides additional detail about the traffic source that the row's traffic_source_type dimension value.",
+        video_thumbnail_impressions: ""
+    }
+}
+
+  -- table containing the combined table for device_type, operating_system and traffic_soucrce and traffic detail
+  -- not currently using video_thumbnail_impressions or video_thumbnail_imporessions_ctr as they are legacy values and coverage is not certain
+  -- gaps in data between 2026-01 = 2026-02
+  -- A table that contains the data transfer table channel_combined information
+SELECT
+  date,
+  channel_id,
+  video_id,
+  device_type,
+  operating_system,
+  traffic_source_type,
+  traffic_source_detail,
+  video_thumbnail_impressions
+FROM
+  `gds-social-data.govuk_youtube_channel.p_channel_reach_combined_a1_govuk_tb`
+WHERE
+PARSE_DATE('%Y%m%d', date) BETWEEN DATE('2025-12-01') AND DATE('2026-02-28')
+AND traffic_source_detail IS NOT NULL

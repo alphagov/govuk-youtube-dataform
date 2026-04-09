@@ -1,0 +1,54 @@
+config {
+    type: "table",
+    assertions: {
+        uniqueKey: ["date", "channel_id", "video_id", "live_or_on_demand", "subscribed_status", "country_code","playback_location_type","traffic_source_type","device_type","operating_system"],
+        nonNull: ["date", "channel_id", "video_id", "live_or_on_demand", "subscribed_status", "country_code","playback_location_type","traffic_source_type","device_type","operating_system"],
+        rowConditions: []
+    },
+    columns: {
+
+        date: "YYYY-MM-DD date of data",
+        channel_id: "the numeric code of the channel id",
+        video_id: "the UUID for the video",
+        live_or_on_demand: "if the video was stream lived or watched on demand",
+        subscribed_status: "If the user activity for the video id is associated with subscribed users or non subscribed users",
+        country_code: "The ISO country codde for the given country",
+        playback_location_type: "This dimension identifies the type of page or application where user activity occurred.",
+        traffic_source_type: "This dimension identifies the referrer type associated with the user activity metrics. The referrer type describes the manner in which users reached the video or channel associated with the row of data in the report.",
+        device_type: "This dimension identifies the physical form factor of the device on which the view occurred.",
+        operating_system: "This dimension identifies the software system of the device on which the view occurred.",
+        views: "the number of views for the given viddeo",
+        engaged_views: "How many times viewers stayed to watch past the initial seconds, not including any loops. This metric only applies to Shorts.",
+        watch_time_minutes: "The number of minutes that users watched videos for the specified channel, content owner, video, or playlist.",
+        average_view_duration_seconds: "The average length, in seconds, of video playbacks. In a playlist report, the metric indicates the average length, in seconds, of video playbacks that occurred in the context of a playlist.",
+        average_view_duration_percentage: "The average percentage of a video watched during a video playback.",
+        red_views: "The number of YouTube Red views.",
+        red_watch_teimt_minutes: "The number of minutes that YouTube Red subscribers watched content."
+
+    }
+}
+
+  -- A table that contains the data transfer table channel_combined information
+SELECT
+  date,
+  channel_id,
+  video_id,
+  live_or_on_demand,
+  subscribed_status,
+  country_code,
+  playback_location_type,
+  traffic_source_type,
+  device_type,
+  operating_system,
+  views,
+  engaged_views,
+  watch_time_minutes,
+  average_view_duration_seconds,
+  average_view_duration_percentage,
+  red_views,
+  red_watch_time_minutes
+FROM
+  `gds-social-data.govuk_youtube_channel.p_channel_combined_a3_govuk_tb`
+WHERE
+  date BETWEEN "2025-12-01"
+  AND "2026-02-28"

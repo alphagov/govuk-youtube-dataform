@@ -1,0 +1,16 @@
+config {
+  type: "assertion",
+  description: "Fails if the target table is empty"
+}
+
+SELECT
+  "Table is empty" AS error_message
+FROM
+  (SELECT 1) 
+WHERE
+  NOT EXISTS (
+    SELECT
+      1
+    FROM
+      ${ref("p_channel_reach_combined_a1_govuk_tb")}
+  )
