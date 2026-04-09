@@ -3,14 +3,14 @@
 config {
   type: "view",
   assertions : {
-    uniqueKey: ["video_id","day", "creatorContentType"],
-    nonNull: ["video_id","day", "creatorContentType","engagedViews", "views", "redViews","estimatedMinutesWatched","estimatedRedMinutesWatched", "averageViewDuration","averageViewPercentage"],
+    uniqueKey: ["video_id","date", "creatorContentType"],
+    nonNull: ["video_id","date", "creatorContentType","engagedViews", "views", "redViews","estimatedMinutesWatched","estimatedRedMinutesWatched", "averageViewDuration","averageViewPercentage"],
     rowConditions: [
     ]
   },
   columns: {
     video_id: "the video id",
-    day: "YYYY-MM-DD date of data",
+    date: "YYYY-MM-DD date of data",
     creatorContentType: "device type, TV, tablet, modbile, desktop",
     views: "views where the user watches a portion of the video",
     engagedViews: "engaged Views where a user has seen the thumbnail/port of the video autoplaying via thumbnail",

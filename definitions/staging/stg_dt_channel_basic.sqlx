@@ -31,9 +31,9 @@ config {
 
   }
 }
-
+WITH CTE1 AS (
 SELECT 
-    PARSE_DATE('%Y%m%d',date) AS date,
+    date,
     channel_id ,
     video_id , -- contains nulls 
     live_or_on_demand ,
@@ -51,4 +51,31 @@ SELECT
     red_views ,
     red_watch_time_minutes 
     FROM ${ref("src_p_channel_basic_a3_govuk_tb")}
- WHERE video_id IS NOT NULL
+
+ WHERE video_id IS NOT NULL) 
+ SELECT 
+    date,
+    channel_id ,
+    video_id , -- contains nulls 
+    live_or_on_demand ,
+    subscribed_status ,
+    country_code,
+    SUM(views) AS views ,
+    SUM(engaged_views) AS engaged_views ,
+    SUM(comments) AS comments ,
+    SUM(likes) AS likes ,
+    SUM(dislikes) AS dislikes ,
+    SUM(shares) AS shares ,
+    SUM(watch_time_minutes) AS watch_time_minutes ,
+    SUM(average_view_duration_seconds) AS average_view_duration_seconds ,
+    SUM(average_view_duration_percentage) AS average_view_duration_percentage ,
+    SUM(red_views) AS red_views ,
+    SUM(red_watch_time_minutes) AS red_watch_time_minutes 
+ from CTE1 
+ GROUP BY 
+    date,
+    channel_id ,
+    video_id , -- contains nulls 
+    live_or_on_demand ,
+    subscribed_status ,
+    country_code
