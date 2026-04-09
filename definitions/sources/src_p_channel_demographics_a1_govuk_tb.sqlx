@@ -1,13 +1,13 @@
 -- A table showing the demographic information for a youtube channel
 config {
-    type: "table",
+    type: "view",
     assertions: {
         uniqueKey: ["date", "channel_id", "video_id", "live_or_on_demand", "subscribed_status", "country_code","age_group","gender"],
         nonNull: ["date", "channel_id", "video_id", "live_or_on_demand", "subscribed_status", "country_code","age_group","gender","views_percentage"],
         rowConditions: []
     },
     columns: {
-        date: "YYYY-MM-DD date of data",
+        date: "YYYYMMDD date of data",
         channel_id: "the numeric code of the channel id",
         video_id: "the UUID for the video",
         live_or_on_demand: "if the video was stream lived or watched on demand",
@@ -33,5 +33,4 @@ SELECT
 FROM
   `gds-social-data.govuk_youtube_channel.p_channel_demographics_a1_govuk_tb`
 WHERE
-  date BETWEEN "2025-12-01"
-  AND "2026-02-28"
+PARSE_DATE('%Y%m%d', date) BETWEEN DATE('2025-12-01') AND DATE('2026-02-28')

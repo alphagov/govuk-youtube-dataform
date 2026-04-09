@@ -1,7 +1,7 @@
 
 -- A table that contains the data transfer sharing information
 config {
-  type: "table",
+  type: "view",
   assertions : {
     uniqueKey: ["date","channel_id", "video_id", "live_or_on_demand","subscribed_status","country_code","sharing_service"],
     nonNull: ["date","channel_id", "video_id", "live_or_on_demand","subscribed_status","country_code","sharing_service","shares"],
@@ -9,7 +9,7 @@ config {
     ]
   },
   columns: {
-    date: "YYYY-MM-DD date of data",
+    date: "YYYYMMDD date of data",
     channel_id: "the numeric code of the channel id",
     video_id: "the UUID for the video",
     live_or_on_demand: "if the video was stream lived or watched on demand",
@@ -31,4 +31,4 @@ SELECT
     shares
     FROM
  `gds-social-data.govuk_youtube_channel.p_channel_sharing_service_a1_govuk_tb`
- WHERE date BETWEEN "2025-12-01" AND "2026-02-28"
+ WHERE PARSE_DATE('%Y%m%d', date) BETWEEN DATE('2025-12-01') AND DATE('2026-02-28')

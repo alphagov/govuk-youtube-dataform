@@ -23,16 +23,16 @@ config {
 }
 
 SELECT 
-    video_id,
-    day,
-    creatorContentType,
-    views,
-    engagedViews,
-    redViews,
-    estimatedMinutesWatched,
-    estimatedRedMinutesWatched,
-    averageViewDuration,
-    averageViewPercentage
+    CAST(video_id AS STRING) AS video_id,
+    day as date,
+    CAST(creatorContentType AS STRING) AS creatorContentType,
+    CAST(views AS INT) AS views,
+    CAST(engagedViews AS INT) AS engagedViews,
+    CAST(redViews AS INT) AS redViews,
+    CAST(estimatedMinutesWatched AS FLOAT64) AS estimatedMinutesWatched,
+    CAST(estimatedRedMinutesWatched AS FLOAT64) AS estimatedRedMinutesWatched,
+    CAST(averageViewDuration AS FLOAT64) AS averageViewDuration,
+    CAST(averageViewPercentage AS FLOAT64) AS averageViewPercentage
 
 FROM
  `gds-social-data.govuk_youtube_channel_staging.playback_details`

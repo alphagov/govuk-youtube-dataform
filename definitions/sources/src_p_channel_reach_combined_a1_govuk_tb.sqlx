@@ -1,12 +1,12 @@
 config {
-    type: "table",
+    type: "view",
     assertions: {
         uniqueKey: ["date", "channel_id", "video_id", "device_type", "operating_system", "traffic_source_type", "traffic_source_detail"],
         nonNull: ["date", "channel_id", "video_id", "device_type", "operating_system", "traffic_source_type"], // traffic_source_detail can return nulls
         rowConditions: []
     },
     columns: {
-        date: "YYYY-MM-DD date of data",
+        date: "YYYYMMDD date of data",
         channel_id: "the numeric code of the channel id",
         video_id: "the UUID for the video",
         device_type: "This dimension identifies the physical form factor of the device on which the view occurred.",
@@ -34,4 +34,3 @@ FROM
   `gds-social-data.govuk_youtube_channel.p_channel_reach_combined_a1_govuk_tb`
 WHERE
 PARSE_DATE('%Y%m%d', date) BETWEEN DATE('2025-12-01') AND DATE('2026-02-28')
-AND traffic_source_detail IS NOT NULL
