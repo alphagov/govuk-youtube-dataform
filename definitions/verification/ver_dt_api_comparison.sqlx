@@ -1,0 +1,45 @@
+config {
+  type: "view"
+}
+
+WITH dt AS (
+  SELECT
+    date,
+    video_id,
+    SUM(views)                   AS dt_views,
+    SUM(engaged_views)           AS dt_engaged_views,
+    SUM(watch_time_minutes)      AS dt_watch_time_minutes,
+    SUM(comments)                AS dt_comments,
+    SUM(likes)                   AS dt_likes,
+    SUM(shares)                  AS dt_shares
+  FROM ${ref('stg_dt_channel_basic')}
+  GROUP BY 1, 2
+),
+api AS (
+  SELECT
+    day                          AS date,
+    video_id,
+    views                        AS api_views,
+    engagedViews                 AS api_engaged_views,
+    estimatedMinutesWatched      AS api_watch_time_minutes,
+    comments                     AS api_comments,
+    likes                        AS api_likes,
+    shares                       AS api_shares
+  FROM ${ref('src_user_activity')}
+)
+SELECT
+  COALESCE(dt.date, api.date)       AS date,
+  COALESCE(dt.video_id, api.video_id) AS video_id,
+  dt_views,             api_views,
+  dt_views - api_views  AS views_delta,
+  SAFE_DIVIDE(dt_views - api_views, api_views) AS views_pct_diff,
+  dt_engaged_views,     api_engaged_views,
+  dt_watch_time_minutes, api_watch_time_minutes,
+  dt_comments,          api_comments,
+  dt_likes,             api_likes,
+  dt_shares,            api_shares,
+  -- Provenance flags
+  dt.date  IS NULL AS api_only,   -- row exists in API but not DT
+  api.date IS NULL AS dt_only     -- row exists in DT but not API
+FROM dt
+FULL OUTER JOIN api USING (date, video_id)

@@ -1,0 +1,44 @@
+
+-- A table that contains the data for user_activity
+config {
+  type: "table",
+  assertions : {
+    uniqueKey: ["video_id","day"],
+    nonNull: ["video_id","day","engagedViews","views","redViews","comments","likes","dislikes","shares","estimatedMinutesWatched","estimatedRedMinutesWatched","averageViewDuration","averageViewPercentage"],
+    rowConditions: [
+    ]
+  },
+  columns: {
+    video_id: "the video id",
+    day: "YYYY-MM-DD date of data",
+    engagedViews: "The number of times the channel's videos have been viewed past the initial seconds.",
+    views: "This metric represents different numbers in different types of reports. This is a core metric and is subject to the Deprecation Policy.",
+    redViews: "The number of times that a video was viewed by YouTube Premium (previously known as YouTube Red) members.",
+    comments: "The number of times that users commented on a video. See the YouTube Help Center for more information. This is a core metric and is subject to the Deprecation Policy.",
+    likes: "The number of times that users indicated that they liked a video by giving it a positive rating. This is a core metric and is subject to the Deprecation Policy.",
+    dislikes: "The number of times that users indicated that they disliked a video by giving it a negative rating. This is a core metric and is subject to the Deprecation Policy.",
+    shares: "The number of times that users shared a video through the Share button. See the YouTube Help Center for more information. This is a core metric and is subject to the Deprecation Policy.",
+    estimatedMinutesWatched: "The number of minutes that users watched videos for the specified channel, content owner, video, or playlist. This is a core metric and is subject to the Deprecation Policy.",
+    estimatedRedMinutesWatched: "The number of minutes that Premium users watched videos for the specified channel, content owner, video, or playlist. This is a core metric and is subject to the Deprecation Policy.",
+    averageViewDuration: "The average percentage of a video watched during a video playback. As of December 13, 2021, this metric excludes looping clips traffic.",
+    averageViewPercentage: "The average percentage of a video watched during a video playback. As of December 13, 2021, this metric excludes looping clips traffic."
+  }
+}
+
+SELECT 
+CAST(video_id AS STRING) AS video_id,
+CAST(day AS DATE) AS day,
+CAST(engagedViews AS INT) AS engagedViews,
+CAST(views AS INT) AS views,
+CAST(redViews AS INT) AS redViews,
+CAST(comments AS INT) AS comments,
+CAST(likes AS INT) AS likes,
+CAST(dislikes AS INT) AS dislikes,
+CAST(shares AS INT) AS shares,
+CAST(estimatedMinutesWatched AS FLOAT64) AS estimatedMinutesWatched,
+CAST(estimatedRedMinutesWatched AS FLOAT64) AS estimatedRedMinutesWatched,
+CAST(averageViewDuration AS FLOAT64) AS averageViewDuration,
+CAST(averageViewPercentage AS FLOAT64) AS averageViewPercentage
+FROM
+ `gds-social-data.govuk_youtube_channel_staging.user_activity`
+WHERE day BETWEEN "2025-12-01" AND "2026-02-28"
