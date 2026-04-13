@@ -25,7 +25,7 @@ api AS (
     comments                     AS api_comments,
     likes                        AS api_likes,
     shares                       AS api_shares
-  FROM ${ref('src_user_activity')}
+  FROM ${ref('raw_user_activity')}
 )
 SELECT
   COALESCE(dt.date, api.date)       AS date,

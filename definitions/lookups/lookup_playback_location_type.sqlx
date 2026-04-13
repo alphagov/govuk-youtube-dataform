@@ -1,0 +1,25 @@
+config {
+  type: "table",
+  assertions: {
+    uniqueKey: ["playback_location_type_id"],
+    nonNull: ["playback_location_type_id", "playback_location_type_name"]
+  },
+  columns: {
+    playback_location_type_id: "Integer ID for the playback location type",
+    playback_location_type_name: "String name of the playback location type"
+  }
+}
+
+SELECT
+  *
+FROM
+  UNNEST(
+    ARRAY<STRUCT<playback_location_type_id INT64, playback_location_type_name STRING>>[
+      (0, "YouTube watch page or app"),
+      (1, "Embedded player"),
+      (2, "YouTube channel page"),
+      (5, "Other"),
+      (7, "YouTube home, subscriptions, or browse"),
+      (8, "YouTube search results"),
+      (10, "YouTube Shorts feed")
+    ])

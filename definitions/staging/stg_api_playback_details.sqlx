@@ -1,0 +1,38 @@
+
+-- Normalised staging model for the YouTube Analytics API playback_details report.
+-- Renames camelCase API columns to snake_case and maps creatorContentType to
+-- content_type to align with DT naming conventions.
+-- Note: 'shorts' is only present in this API source; DT only captures LIVE/ON_DEMAND.
+config {
+  type: "table",
+  assertions: {
+    uniqueKey: ["date", "video_id", "content_type"],
+    nonNull: ["date", "video_id", "content_type", "views", "engaged_views", "watch_time_minutes"],
+    rowConditions: []
+  },
+  columns: {
+    date: "YYYY-MM-DD date of data",
+    video_id: "The UUID for the video",
+    content_type: "The type of content: liveStream, VideoONDemand, or shorts",
+    views: "The number of times the video was viewed",
+    engaged_views: "The number of times viewers stayed to watch past the initial seconds",
+    red_views: "The number of times the video was viewed by YouTube Premium members",
+    watch_time_minutes: "The estimated number of minutes users watched the video",
+    red_watch_time_minutes: "The estimated number of minutes YouTube Premium members watched the video",
+    average_view_duration_seconds: "The average length in seconds of video playbacks",
+    average_view_duration_percentage: "The average percentage of the video watched during a playback"
+  }
+}
+
+SELECT
+  CAST(date AS DATE)                         AS date,
+  video_id,
+  creatorContentType                         AS content_type,
+  views,
+  engagedViews                               AS engaged_views,
+  redViews                                   AS red_views,
+  estimatedMinutesWatched                    AS watch_time_minutes,
+  estimatedRedMinutesWatched                 AS red_watch_time_minutes,
+  averageViewDuration                        AS average_view_duration_seconds,
+  averageViewPercentage                      AS average_view_duration_percentage
+FROM ${ref("raw_playback_details")}

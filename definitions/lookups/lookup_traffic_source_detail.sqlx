@@ -1,0 +1,56 @@
+config {
+  type: "table",
+  assertions: {
+    uniqueKey: ["traffic_source_type_id", "traffic_source_detail"],
+    nonNull: ["traffic_source_type_id", "traffic_source_detail"]
+  },
+  columns: {
+    traffic_source_type_id: "Integer ID of the parent traffic source type",
+    traffic_source_detail: "String detail value for the traffic source"
+  }
+}
+
+SELECT
+  *
+FROM
+  UNNEST(
+    ARRAY<STRUCT<traffic_source_type_id INT64, traffic_source_detail STRING>>[
+      -- Type 1: YouTube advertising
+      (1, "ctp_engagement_ad"),
+      (1, "engagement_ad"),
+      (1, "googlemediaads"),
+      (1, "insearch_display"),
+      (1, "instream"),
+      (1, "instream-select"),
+      (1, "unknown"),
+      (1, "video_wall"),
+      (1, "yva"),
+
+      -- Type 3: Browse features
+      (3, "explore"),
+      (3, "learning"),
+      (3, "music"),
+      (3, "my-history"),
+      (3, "my-subscriptions"),
+      (3, "my-uploads"),
+      (3, "podcasts"),
+      (3, "shows"),
+      (3, "watch-later"),
+      (3, "what-to-watch"),
+
+      -- Type 8: Other YouTube features
+      (8, "g-crec"),
+      (8, "offline"),
+      (8, "promotion"),
+      (8, "unknown"),
+      (8, "widget"),
+      (8, "youtu.be"),
+      (8, "ytremote"),
+
+      -- Type 17: Notifications
+      (17, "inbox"),
+      (17, "push"),
+      (17, "sdig"),
+      (17, "uploaded_other"),
+      (17, "uploaded_push")
+    ])

@@ -50,5 +50,5 @@ SELECT
     average_view_duration_percentage ,
     red_views ,
     red_watch_time_minutes 
-    FROM ${ref("src_p_channel_basic_a3_govuk_tb")}
+    FROM ${ref("raw_p_channel_basic_a3_govuk_tb")}
  WHERE video_id IS NOT NULL

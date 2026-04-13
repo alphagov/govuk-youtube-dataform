@@ -1,0 +1,32 @@
+
+-- Normalised staging model for the YouTube Analytics API operating_system_and_device report.
+-- Renames deviceType -> device_type and operatingSystem -> operating_system to align
+-- with DT naming conventions. DT and API use compatible string values for these dimensions
+-- so they can be joined directly in fact models.
+config {
+  type: "table",
+  assertions: {
+    uniqueKey: ["date", "video_id", "device_type", "operating_system"],
+    nonNull: ["date", "video_id", "device_type", "operating_system", "views", "engaged_views", "watch_time_minutes"],
+    rowConditions: []
+  },
+  columns: {
+    date: "YYYY-MM-DD date of data",
+    video_id: "The UUID for the video",
+    device_type: "The type of device used to view the video, e.g. MOBILE, TABLET, DESKTOP, TV",
+    operating_system: "The operating system of the device, e.g. ANDROID, IOS, WINDOWS, MACINTOSH",
+    views: "The number of times the video was viewed on this device/OS combination",
+    engaged_views: "The number of times viewers stayed to watch past the initial seconds on this device/OS combination",
+    watch_time_minutes: "The estimated number of minutes users watched on this device/OS combination"
+  }
+}
+
+SELECT
+  CAST(day AS DATE)                          AS date,
+  video_id,
+  deviceType                                 AS device_type,
+  operatingSystem                            AS operating_system,
+  views,
+  engagedViews                               AS engaged_views,
+  estimatedMinutesWatched                    AS watch_time_minutes
+FROM ${ref("raw_operating_system_and_device")}

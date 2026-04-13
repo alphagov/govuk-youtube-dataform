@@ -1,0 +1,49 @@
+config {
+  type: "table",
+  assertions: {
+    uniqueKey: ["operating_system_id"],
+    nonNull: ["operating_system_id", "operating_system_name"]
+  },
+  columns: {
+    operating_system_id: "Integer ID for the operating system",
+    operating_system_name: "String name of the operating system"
+  }
+}
+
+SELECT
+  *
+FROM
+  UNNEST(
+    ARRAY<STRUCT<operating_system_id INT64, operating_system_name STRING>>[
+      (1, "Other"),
+      (2, "Windows"),
+      (3, "Windows Mobile"),
+      (4, "Android"),
+      (5, "iOS"),
+      (6, "Symbian"),
+      (7, "Blackberry"),
+      (9, "Macintosh"),
+      (10, "PlayStation"),
+      (11, "Bada"),
+      (12, "WebOS"),
+      (13, "Linux"),
+      (14, "Hiptop"),
+      (15, "MeeGo"),
+      (16, "Wii"),
+      (17, "Xbox"),
+      (18, "PlayStation Vita"),
+      (19, "Smart TV"),
+      (20, "Nintendo 3DS"),
+      (21, "Chromecast"),
+      (22, "Tizen"),
+      (23, "Firefox"),
+      (24, "RealMedia"),
+      (25, "KaiOS"),
+      (26, "Roku"),
+      (27, "Nintendo Switch"),
+      (28, "Apple tvOS"),
+      (29, "Fire OS"),
+      (30, "ChromeOS"),
+      (31, "Vidaa"),
+      (32, "VegaOS")
+    ])

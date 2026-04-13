@@ -1,0 +1,49 @@
+-- Maps YouTube Data Transfer (Reporting API) integer traffic_source_type codes
+-- to the corresponding YouTube Analytics API insightTrafficSourceType string labels.
+-- Used in fact models to produce a single canonical traffic_source_label column
+-- that is consistent across both the API (pre-Dec 2025) and DT (from Dec 2025) periods.
+--
+-- Sources:
+--   DT codes:  https://developers.google.com/youtube/reporting/v1/reports/channel_reports#traffic-source-reports
+--   API labels: https://developers.google.com/youtube/analytics/channel_reports
+config {
+  type: "table",
+  assertions: {
+    uniqueKey: ["dt_traffic_source_type_code"],
+    nonNull: ["dt_traffic_source_type_code", "api_traffic_source_type", "traffic_source_label"],
+    rowConditions: []
+  },
+  columns: {
+    dt_traffic_source_type_code: "Integer code used in the Data Transfer (Reporting API) p_channel_traffic_source table",
+    api_traffic_source_type: "String label used in the YouTube Analytics API insightTrafficSourceType dimension",
+    traffic_source_label: "Human-readable label for use in reporting"
+  }
+}
+
+SELECT *
+FROM UNNEST(
+  ARRAY<STRUCT<
+    dt_traffic_source_type_code INT64,
+    api_traffic_source_type     STRING,
+    traffic_source_label        STRING
+  >>[
+    -- Direct matches between DT integer codes and API string labels
+    (0,  'NO_LINK_OTHER',    'Direct or unknown'),
+    (1,  'ADVERTISING',      'YouTube advertising'),
+    (3,  'BROWSE_FEATURES',  'Browse features (Home, Subscription feed)'),
+    (4,  'YT_CHANNEL',       'YouTube channel page'),
+    (5,  'YT_SEARCH',        'YouTube search'),
+    (7,  'RELATED_VIDEO',    'Suggested videos'),
+    (8,  'YT_OTHER_PAGE',    'Other YouTube features'),
+    (9,  'EXT_URL',          'External website or app'),
+    (11, 'PLAYLIST',         'Video playlist page'),
+    (14, 'NOTIFICATION',     'Notifications'),
+    (17, 'PLAYLIST',         'Playlist page'),
+    (18, 'END_SCREEN',       'End screen'),
+    (19, 'CARD',             'Cards'),
+    (38, 'PROMOTED',         'Product / shopping page'),
+    (40, 'YT_OTHER_PAGE',    'Hashtag pages'),
+    (53, 'YT_OTHER_PAGE',    'Live redirect'),
+    (58, 'SHORTS',           'Shorts feed')
+  ]
+)
