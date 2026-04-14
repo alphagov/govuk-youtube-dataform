@@ -1,0 +1,65 @@
+-- Verifies that source boundaries are correctly applied in all stitched target models.
+-- Expected result:
+--   data_source='api': max_date = 2025-11-30, api_rows_after_cutoff = 0
+--   data_source='dt':  min_date = 2025-12-01, dt_rows_before_cutoff = 0
+-- Any non-zero value in api_rows_after_cutoff or dt_rows_before_cutoff
+-- indicates a boundary enforcement failure in that model.
+config {
+  type: "view"
+}
+
+SELECT
+  'tgt_video_performance_daily'               AS model,
+  data_source,
+  MIN(date)                                   AS min_date,
+  MAX(date)                                   AS max_date,
+  COUNTIF(data_source = 'api'
+    AND date >= '2025-12-01')                 AS api_rows_after_cutoff,
+  COUNTIF(data_source = 'dt'
+    AND date < '2025-12-01')                  AS dt_rows_before_cutoff
+FROM ${ref("tgt_video_performance_daily")}
+GROUP BY data_source
+
+UNION ALL
+
+SELECT
+  'tgt_video_by_content_type'                 AS model,
+  data_source,
+  MIN(date)                                   AS min_date,
+  MAX(date)                                   AS max_date,
+  COUNTIF(data_source = 'api'
+    AND date >= '2025-12-01')                 AS api_rows_after_cutoff,
+  COUNTIF(data_source = 'dt'
+    AND date < '2025-12-01')                  AS dt_rows_before_cutoff
+FROM ${ref("tgt_video_by_content_type")}
+GROUP BY data_source
+
+UNION ALL
+
+SELECT
+  'tgt_video_by_device_os'                    AS model,
+  data_source,
+  MIN(date)                                   AS min_date,
+  MAX(date)                                   AS max_date,
+  COUNTIF(data_source = 'api'
+    AND date >= '2025-12-01')                 AS api_rows_after_cutoff,
+  COUNTIF(data_source = 'dt'
+    AND date < '2025-12-01')                  AS dt_rows_before_cutoff
+FROM ${ref("tgt_video_by_device_os")}
+GROUP BY data_source
+
+UNION ALL
+
+SELECT
+  'tgt_video_by_traffic_source'               AS model,
+  data_source,
+  MIN(date)                                   AS min_date,
+  MAX(date)                                   AS max_date,
+  COUNTIF(data_source = 'api'
+    AND date >= '2025-12-01')                 AS api_rows_after_cutoff,
+  COUNTIF(data_source = 'dt'
+    AND date < '2025-12-01')                  AS dt_rows_before_cutoff
+FROM ${ref("tgt_video_by_traffic_source")}
+GROUP BY data_source
+
+ORDER BY model, data_source

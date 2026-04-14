@@ -1,0 +1,80 @@
+-- Checks for duplicate composite keys across all target models.
+-- Each target model has uniqueKey assertions that fail the build on duplicates;
+-- this view provides a diagnostic to identify *which* rows are duplicated and in
+-- which model, for use in investigation.
+-- Expected result: empty — any returned rows indicate a grain violation.
+config {
+  type: "view"
+}
+
+SELECT
+  'tgt_video_performance_daily'  AS model,
+  date,
+  video_id,
+  CAST(NULL AS STRING)                           AS extra_dim,
+  COUNT(*)                       AS row_count
+FROM ${ref("tgt_video_performance_daily")}
+GROUP BY date, video_id
+HAVING COUNT(*) > 1
+
+UNION ALL
+
+SELECT
+  'tgt_video_by_content_type'    AS model,
+  date,
+  video_id,
+  content_type                   AS extra_dim,
+  COUNT(*)                       AS row_count
+FROM ${ref("tgt_video_by_content_type")}
+GROUP BY date, video_id, content_type
+HAVING COUNT(*) > 1
+
+UNION ALL
+
+SELECT
+  'tgt_video_by_device_os'       AS model,
+  date,
+  video_id,
+  CONCAT(device_type_name, '|', operating_system_name) AS extra_dim,
+  COUNT(*)                       AS row_count
+FROM ${ref("tgt_video_by_device_os")}
+GROUP BY date, video_id, device_type_name, operating_system_name
+HAVING COUNT(*) > 1
+
+UNION ALL
+
+SELECT
+  'tgt_video_by_traffic_source'  AS model,
+  date,
+  video_id,
+  traffic_source_type            AS extra_dim,
+  COUNT(*)                       AS row_count
+FROM ${ref("tgt_video_by_traffic_source")}
+GROUP BY date, video_id, traffic_source_type
+HAVING COUNT(*) > 1
+
+UNION ALL
+
+SELECT
+  'tgt_video_by_country'         AS model,
+  date,
+  video_id,
+  country_code                   AS extra_dim,
+  COUNT(*)                       AS row_count
+FROM ${ref("tgt_video_by_country")}
+GROUP BY date, video_id, country_code
+HAVING COUNT(*) > 1
+
+UNION ALL
+
+SELECT
+  'tgt_video_demographics'       AS model,
+  date,
+  video_id,
+  CONCAT(age_group, '|', gender) AS extra_dim,
+  COUNT(*)                       AS row_count
+FROM ${ref("tgt_video_demographics")}
+GROUP BY date, video_id, age_group, gender
+HAVING COUNT(*) > 1
+
+ORDER BY model, date, video_id
