@@ -269,5 +269,6 @@ FROM
 ("YT","Mayotte"),
 ("ZA","South Africa"),
 ("ZM","Zambia"),
-("ZW","Zimbabw")
+("ZW","Zimbabw"),
+('ZZ',"Unknown")
 ])
