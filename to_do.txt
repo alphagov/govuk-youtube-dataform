@@ -14,5 +14,9 @@ Check string date mismatch
 - p_channel_reach_combined
 find out why p_channel_reach_combined_a1_govuk_tb is not returning rows 
 
+Before production 
+- we currently only are importing API data from 2025-12-01 - 2026-02-28 to reduce costs for all these queries 
+- When we have testing the overlap we can then import the last 5 years of data
+
 
 

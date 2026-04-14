@@ -12,5 +12,5 @@ WHERE
     SELECT
       1
     FROM
-      ${ref("src_p_channel_reach_combined_a1_govuk_tb")}
+      ${ref("raw_p_channel_reach_combined_a1_govuk_tb")}
   )

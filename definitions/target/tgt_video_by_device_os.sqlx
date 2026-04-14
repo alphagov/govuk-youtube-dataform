@@ -1,0 +1,53 @@
+-- Device and operating system breakdown fact model, stitching API historical with
+-- ongoing DT data. API is authoritative for pre-Dec 2025; DT is authoritative from
+-- Dec 2025 onwards. DT and API use compatible string values for device_type and
+-- operating_system so no lookup mapping is required.
+-- DT rows are aggregated to (date, video_id, device_type, operating_system) grain
+-- by summing over live_or_on_demand, subscribed_status, and country_code.
+config {
+  type: "table",
+  assertions: {
+    uniqueKey: ["date", "video_id", "device_type_name", "operating_system_name"],
+    nonNull: ["date", "video_id", "device_type_name", "operating_system_name", "data_source", "views"]
+  },
+  columns: {
+    date: "YYYY-MM-DD date of data",
+    video_id: "The UUID for the video",
+    data_source: "Origin of the row: 'api' (pre-Dec 2025) or 'dt' (Dec 2025 onwards)",
+    device_type: "Physical form factor of the device",
+    operating_system: "Software system of the device",
+    views: "Total views on this device/OS combination",
+    engaged_views: "Total engaged views on this device/OS combination",
+    watch_time_minutes: "Total estimated minutes watched on this device/OS combination"
+  }
+}
+
+-- Historical: API only (pre-Dec 2025)
+SELECT
+  api.date,
+  api.video_id,
+  'api'                                  AS data_source,
+  api.device_type_name,
+  api.operating_system_name,
+  api.views,
+  api.engaged_views,
+  api.watch_time_minutes
+FROM ${ref("stg_api_device_os")} api
+WHERE api.date < '2025-12-01'
+
+UNION ALL
+
+-- Ongoing: DT (Dec 2025 onwards, authoritative for overlap period)
+-- Aggregated to (date, video_id, device_type, operating_system) grain
+SELECT
+  dt.date,
+  dt.video_id,
+  'dt'                                   AS data_source,
+  dt.device_type_name,
+  dt.operating_system_name,
+  SUM(dt.views)                          AS views,
+  SUM(dt.engaged_views)                  AS engaged_views,
+  SUM(dt.watch_time_minutes)             AS watch_time_minutes
+FROM ${ref("stg_dt_device_os")} dt
+WHERE dt.date >= '2025-12-01'
+GROUP BY dt.date, dt.video_id, dt.device_type_name, dt.operating_system_name

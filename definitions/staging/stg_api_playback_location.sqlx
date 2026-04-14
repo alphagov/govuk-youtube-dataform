@@ -1,0 +1,34 @@
+
+-- Normalised staging model for the YouTube Analytics API playback_location report.
+-- Renames insightPlaybackLocationType -> playback_location_type and
+-- creatorContentType -> content_type to align with DT naming conventions.
+-- Note: DT stores playback_location_type as integer codes; API uses string labels
+-- (e.g. WATCH, EMBEDDED, YT_CHANNEL). A lookup table will be needed to harmonise
+-- these in fact models.
+config {
+  type: "table",
+  assertions: {
+    uniqueKey: ["date", "video_id", "playback_location_type", "content_type"],
+    nonNull: ["date", "video_id", "playback_location_type", "content_type", "views", "engaged_views", "watch_time_minutes"],
+    rowConditions: []
+  },
+  columns: {
+    date: "YYYY-MM-DD date of data",
+    video_id: "The UUID for the video",
+    playback_location_type: "Where the video was viewed, e.g. WATCH (YouTube), EMBEDDED, YT_CHANNEL, SHORTS_FEED",
+    content_type: "The type of content: liveStream, VideoONDemand, or shorts",
+    views: "The number of times the video was viewed at this playback location",
+    engaged_views: "The number of times viewers stayed to watch past the initial seconds at this playback location",
+    watch_time_minutes: "The estimated number of minutes users watched at this playback location"
+  }
+}
+
+SELECT
+  CAST(day AS DATE)                          AS date,
+  video_id,
+  insightPlaybackLocationType                AS playback_location_type,
+  creatorContentType                         AS content_type,
+  views,
+  engagedViews                               AS engaged_views,
+  estimatedMinutesWatched                    AS watch_time_minutes
+FROM ${ref("raw_playback_location")}

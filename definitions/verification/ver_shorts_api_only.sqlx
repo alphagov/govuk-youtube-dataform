@@ -1,0 +1,19 @@
+-- Confirms that content_type = 'SHORTS' rows exist only for the API period
+-- (data_source = 'api', date < 2025-12-01). DT cannot distinguish Shorts from VOD,
+-- so any SHORTS row with data_source != 'api' indicates a mapping or boundary error.
+-- Expected result: empty — any returned rows indicate a SHORTS contamination in DT rows.
+config {
+  type: "view"
+}
+
+SELECT
+  date,
+  video_id,
+  data_source,
+  content_type,
+  views,
+  COUNT(*) OVER (PARTITION BY data_source) AS total_offending_rows
+FROM ${ref("tgt_video_by_content_type")}
+WHERE content_type = 'SHORTS'
+  AND data_source != 'api'
+ORDER BY date, video_id

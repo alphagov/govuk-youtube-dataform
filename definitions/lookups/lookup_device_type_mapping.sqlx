@@ -1,0 +1,24 @@
+config {
+  type: "table",
+  assertions: {
+    uniqueKey: ["device_type_id"],
+    nonNull: ["device_type_id", "device_type_name"]
+  },
+  columns: {
+    device_type_id: "Integer ID for the device type",
+    device_type_name: "String name of the device type"
+  }
+}
+
+SELECT
+  *
+FROM
+  UNNEST(
+    ARRAY<STRUCT<device_type_id INT64, device_type_name STRING>>[
+      (100, "Unknown"),
+      (101, "Computer"),
+      (102, "TV"),
+      (103, "Game console"),
+      (104, "Mobile phone"),
+      (105, "Tablet")
+    ])

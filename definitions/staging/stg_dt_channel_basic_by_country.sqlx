@@ -1,7 +1,7 @@
 
--- A table that contains the data transfer table channel_basic information
+-- A table that contains the processed data transfer table channel_basic information
 config {
-  type: "view",
+  type: "table",
   assertions : {
     uniqueKey: ["date","channel_id", "video_id", "live_or_on_demand","subscribed_status","country_code"],
     nonNull: ["date","channel_id","live_or_on_demand","subscribed_status","country_code"], // video_id can return null for about 50 videos all on 20251213
@@ -10,7 +10,7 @@ config {
   },
   columns: {
    
-    date: "YYYYMMDD date of data",
+    date: "YYYY-MM-DD date of data",
     channel_id: "the numeric code of the channel id",
     video_id: "the UUID for the video",
     live_or_on_demand: "if the video was stream lived or watched on demand",
@@ -33,23 +33,22 @@ config {
 }
 
 SELECT 
-    PARSE_DATE('%Y%m%d', date) AS date,
-    CAST(channel_id AS STRING) AS channel_id,
-    CAST(video_id AS STRING) AS video_id, -- contains nulls 
-    CAST(live_or_on_demand AS STRING) AS live_or_on_demand,
-    CAST(subscribed_status AS STRING) AS subscribed_status,
-    CAST(country_code AS STRING) AS country_code,
-    CAST(views AS INT) AS views,
-    CAST(engaged_views AS INT) AS engaged_views,
-    CAST(comments AS INT) AS comments,
-    CAST(likes AS INT) AS likes,
-    CAST(dislikes AS INT) AS dislikes,
-    CAST(shares AS INT) AS shares,
-    CAST(watch_time_minutes AS FLOAT64) AS watch_time_minutes,
-    CAST(average_view_duration_seconds AS FLOAT64) AS average_view_duration_seconds,
-    CAST(average_view_duration_percentage AS FLOAT64) AS average_view_duration_percentage,
-    CAST(red_views AS INT) AS red_views,
-    CAST(red_watch_time_minutes AS FLOAT64) AS red_watch_time_minutes
-    FROM
- `gds-social-data.govuk_youtube_channel.p_channel_basic_a3_govuk_tb`
- WHERE PARSE_DATE('%Y%m%d', date) BETWEEN DATE('2025-12-01') AND DATE('2026-02-28')
+    date,
+    channel_id ,
+    video_id , -- contains nulls 
+    live_or_on_demand ,
+    subscribed_status ,
+    country_code ,
+    views ,
+    engaged_views ,
+    comments ,
+    likes ,
+    dislikes ,
+    shares ,
+    watch_time_minutes ,
+    average_view_duration_seconds ,
+    average_view_duration_percentage ,
+    red_views ,
+    red_watch_time_minutes 
+    FROM ${ref("raw_p_channel_basic_a3_govuk_tb")}
+ WHERE video_id IS NOT NULL

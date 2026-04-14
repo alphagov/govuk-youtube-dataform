@@ -1,0 +1,42 @@
+config {
+  type: "table",
+  assertions: {
+    uniqueKey: ["traffic_source_type_id"],
+    nonNull: ["traffic_source_type_id", "traffic_source_type_name"]
+  },
+  columns: {
+    traffic_source_type_id: "Integer ID for the traffic source type",
+    traffic_source_type_name: "String name of the traffic source type"
+  }
+}
+
+SELECT
+  *
+FROM
+  UNNEST(
+    ARRAY<STRUCT<traffic_source_type_id INT64, traffic_source_type_name STRING>>[
+      (0, "Direct or unknown"),
+      (1, "YouTube advertising"),
+      (3, "Browse features"),
+      (4, "YouTube channels"),
+      (5, "YouTube search"),
+      (7, "Suggested videos"),
+      (8, "Other YouTube features"),
+      (9, "External"),
+      (11, "Video cards and annotations"),
+      (14, "Playlists"),
+      (17, "Notifications"),
+      (18, "Playlist pages"),
+      (19, "Programming from claimed content"),
+      (20, "Interactive video endscreen"),
+      (23, "Stories"),
+      (24, "Shorts"),
+      (25, "Product Pages"),
+      (26, "Hashtag Pages"),
+      (27, "Sound Pages"),
+      (28, "Live redirect"),
+      (29, "Podcasts"),
+      (30, "Remixed video"),
+      (31, "Vertical live feed"),
+      (32, "Related video")
+    ])

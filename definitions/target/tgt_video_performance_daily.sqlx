@@ -1,0 +1,76 @@
+-- Core daily performance fact model, stitching API historical with ongoing DT data.
+-- API is authoritative for pre-Dec 2025; DT is authoritative from Dec 2025 onwards
+-- (including the overlap window). DT rows are aggregated from the full DT grain
+-- (date, video_id, live_or_on_demand, subscribed_status, country_code) to (date, video_id).
+-- average_view_duration columns are NULL for DT rows as they cannot be reliably
+-- aggregated across sub-dimensions.
+config {
+  type: "table",
+  assertions: {
+    uniqueKey: ["date", "video_id"],
+    nonNull: ["date", "video_id", "data_source", "views"]
+  },
+  columns: {
+    date: "YYYY-MM-DD date of data",
+    video_id: "The UUID for the video",
+    video_title: "Title of the video from lookup (may be NULL if unmapped)",
+    data_source: "Origin of the row: 'api' (pre-Dec 2025) or 'dt' (Dec 2025 onwards)",
+    views: "Total views",
+    engaged_views: "Total engaged views",
+    watch_time_minutes: "Total estimated minutes watched",
+    comments: "Total comments",
+    likes: "Total likes",
+    dislikes: "Total dislikes",
+    shares: "Total shares",
+    red_views: "Total YouTube Premium views",
+    red_watch_time_minutes: "Total minutes watched by YouTube Premium members",
+    average_view_duration_seconds: "Average view duration in seconds (API only; NULL for DT rows)",
+    average_view_duration_percentage: "Average percentage of video watched (API only; NULL for DT rows)"
+  }
+}
+
+-- Historical: API only (pre-Dec 2025)
+SELECT
+  api.date,
+  api.video_id,
+  lv.video_title,
+  'api'                                  AS data_source,
+  api.views,
+  api.engaged_views,
+  api.watch_time_minutes,
+  api.comments,
+  api.likes,
+  api.dislikes,
+  api.shares,
+  api.red_views,
+  api.red_watch_time_minutes,
+  api.average_view_duration_seconds,
+  api.average_view_duration_percentage
+FROM ${ref("stg_api_user_activity")} api
+LEFT JOIN ${ref("lookup_video_id_title_mapping")} lv USING (video_id)
+WHERE api.date < '2025-12-01'
+
+UNION ALL
+
+-- Ongoing: DT (Dec 2025 onwards, authoritative for overlap period)
+-- Aggregated to (date, video_id) grain from the full DT sub-dimensions
+SELECT
+  dt.date,
+  dt.video_id,
+  lv.video_title,
+  'dt'                                   AS data_source,
+  SUM(dt.views)                          AS views,
+  SUM(dt.engaged_views)                  AS engaged_views,
+  SUM(dt.watch_time_minutes)             AS watch_time_minutes,
+  SUM(dt.comments)                       AS comments,
+  SUM(dt.likes)                          AS likes,
+  SUM(dt.dislikes)                       AS dislikes,
+  SUM(dt.shares)                         AS shares,
+  SUM(dt.red_views)                      AS red_views,
+  SUM(dt.red_watch_time_minutes)         AS red_watch_time_minutes,
+  NULL                                   AS average_view_duration_seconds,
+  NULL                                   AS average_view_duration_percentage
+FROM ${ref("stg_dt_channel_basic")} dt
+LEFT JOIN ${ref("lookup_video_id_title_mapping")} lv USING (video_id)
+WHERE dt.date >= '2025-12-01'
+GROUP BY dt.date, dt.video_id, lv.video_title

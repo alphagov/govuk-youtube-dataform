@@ -1,0 +1,45 @@
+
+-- playback_location_type is stored as integer codes in DT (vs string labels in API).
+-- Harmonisation with API string labels occurs in fct_video_by_playback_location.
+
+config {
+  type: "table",
+  assertions: {
+    uniqueKey: ["date", "video_id", "playback_location_type", "playback_location_detail", "live_or_on_demand", "subscribed_status", "country_code"],
+    nonNull: ["date", "video_id", "playback_location_type", "views", "watch_time_minutes"]
+  },
+  columns: {
+    date: "YYYY-MM-DD date of data",
+    video_id: "The UUID for the video",
+    live_or_on_demand: "Whether the video was streamed live or watched on demand",
+    subscribed_status: "Whether the activity is from subscribed or non-subscribed users",
+    country_code: "ISO country code for the viewer",
+    playback_location_type: "Integer code identifying where the video was viewed",
+    playback_location_detail: "URL or application where the playback occurred",
+    views: "The number of views at this playback location",
+    engaged_views: "The number of engaged views at this playback location",
+    watch_time_minutes: "Estimated minutes watched at this playback location",
+    average_view_duration_seconds: "Average view duration in seconds",
+    average_view_duration_percentage: "Average percentage of video watched",
+    red_views: "Views by YouTube Premium members",
+    red_watch_time_minutes: "Minutes watched by YouTube Premium members"
+  }
+}
+
+SELECT
+  PARSE_DATE('%Y%m%d', date)           AS date,
+  video_id,
+  live_or_on_demand,
+  subscribed_status,
+  country_code,
+  playback_location_type,
+  playback_location_detail,
+  views,
+  engaged_views,
+  watch_time_minutes,
+  average_view_duration_seconds,
+  average_view_duration_percentage,
+  red_views,
+  red_watch_time_minutes
+FROM ${ref("raw_p_channel_playback_location_a3_govuk_tb")}
+WHERE video_id IS NOT NULL

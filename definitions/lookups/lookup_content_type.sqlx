@@ -1,0 +1,40 @@
+-- There might be a better way to do this, right now its a fairly rough job of alighing the dt and api meansings
+-- If we decide we want to know what a short is using the dt service
+-- other proxies 
+-- -- playback location type - 10 meaning it was watch as part of a shorts feed	https://developers.google.com/youtube/reporting/v1/reports/dimensions#Traffic_Source_Dimensions
+-- Canonical content type lookup mapping both data sources to a single content_type key.
+-- DT is the primary source going forward (from Dec 2025); API covers historical data (pre-Dec 2025).
+--
+-- Design: content_type is the canonical key. Both dt_value and api_value are attributes
+-- that fact models use to join depending on which source period is being processed.
+--
+-- Important limitation: DT does not distinguish Shorts from standard VOD — both are
+-- represented as ON_DEMAND in the live_or_on_demand dimension. As a result, two canonical
+-- content types (VOD and SHORTS) share the same dt_value. SHORTS is only resolvable
+-- from the API source (pre-Dec 2025). For DT-sourced rows, content_type will be VOD
+-- where Shorts cannot be identified.
+config {
+  type: "table",
+  assertions: {
+    uniqueKey: ["content_type"],
+    nonNull: ["content_type", "dt_value", "api_value"]
+  },
+  columns: {
+    content_type: "Canonical content type label used across all fact models",
+    dt_value: "Corresponding live_or_on_demand value in the Data Transfer source",
+    api_value: "Corresponding creatorContentType value in the YouTube Analytics API source"
+  }
+}
+
+SELECT *
+FROM UNNEST(
+  ARRAY<STRUCT<
+    content_type  STRING,
+    dt_value      STRING,
+    api_value     STRING
+  >>[
+    ('LIVE',   'live',      'liveStream'),
+    ('VOD',    'on_demand', 'videoOnDemand'),
+    ('SHORTS', 'on_demand', 'shorts')
+  ]
+)
