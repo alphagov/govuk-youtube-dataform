@@ -1,0 +1,26 @@
+-- Checks for gaps in daily row counts around the API→DT source transition (2025-12-01).
+-- Shows one row per (date, data_source) for the 14-day window centred on the cutover,
+-- so any missing dates or sudden drops in video_count or total_views are immediately visible.
+-- Expected result: a complete daily series with no missing dates in either source's window,
+-- and no dramatic discontinuity in video_count or total_views at the boundary.
+config {
+  type: "view"
+}
+
+SELECT
+  date,
+  data_source,
+  COUNT(DISTINCT video_id)         AS video_count,
+  SUM(views)                       AS total_views,
+  SUM(watch_time_minutes)          AS total_watch_time_minutes,
+  -- Flag dates that fall on or after the cutover but carry api rows, or vice versa
+  CASE
+    WHEN data_source = 'api' AND date >= '2025-12-01' THEN TRUE
+    WHEN data_source = 'dt'  AND date <  '2025-12-01' THEN TRUE
+    ELSE FALSE
+  END                              AS boundary_violation
+FROM ${ref("tgt_video_performance_daily")}
+WHERE date BETWEEN DATE_SUB(DATE '2025-12-01', INTERVAL 7 DAY)
+                AND DATE_ADD(DATE '2025-12-01', INTERVAL 7 DAY)
+GROUP BY date, data_source
+ORDER BY date, data_source

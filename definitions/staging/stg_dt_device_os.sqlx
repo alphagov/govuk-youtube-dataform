@@ -11,8 +11,8 @@
 config {
   type: "table",
   assertions: {
-    uniqueKey: ["date", "video_id", "device_type", "operating_system", "live_or_on_demand", "subscribed_status", "country_code"],
-    nonNull: ["date", "video_id", "device_type", "operating_system", "views", "watch_time_minutes"]
+    uniqueKey: ["date", "video_id", "device_type_name", "operating_system_name", "live_or_on_demand", "subscribed_status", "country_code"],
+    nonNull: ["date", "video_id", "device_type_name", "operating_system_name", "views", "watch_time_minutes"]
   },
   columns: {
     date: "YYYY-MM-DD date of data",
@@ -20,8 +20,8 @@ config {
     live_or_on_demand: "Whether the video was streamed live or watched on demand",
     subscribed_status: "Whether the activity is from subscribed or non-subscribed users",
     country_code: "ISO country code for the viewer",
-    device_type: "Physical form factor of the device",
-    operating_system: "Software system of the device",
+    device_type_name: "Physical form factor of the device",
+    operating_system_name: "Software system of the device",
     views: "The number of views on this device/OS combination",
     engaged_views: "The number of engaged views on this device/OS combination",
     watch_time_minutes: "Estimated minutes watched on this device/OS combination",
@@ -33,19 +33,23 @@ config {
 }
 
 SELECT
-  PARSE_DATE('%Y%m%d', date)           AS date,
-  video_id,
-  live_or_on_demand,
-  subscribed_status,
-  country_code,
-  device_type,
-  operating_system,
-  views,
-  engaged_views,
-  watch_time_minutes,
-  average_view_duration_seconds,
-  average_view_duration_percentage,
-  red_views,
-  red_watch_time_minutes
-FROM ${ref("raw_p_channel_device_os_a3_govuk_tb")}
-WHERE video_id IS NOT NULL
+  PARSE_DATE('%Y%m%d', dt_device.date)           AS date,
+  dt_device.video_id,
+  dt_device.live_or_on_demand,
+  dt_device.subscribed_status,
+  dt_device.country_code,
+  device_mapping.device_type_name,
+  os_mapping.operating_system_name,
+  dt_device.views,
+  dt_device.engaged_views,
+  dt_device.watch_time_minutes,
+  dt_device.average_view_duration_seconds,
+  dt_device.average_view_duration_percentage,
+  dt_device.red_views,
+  dt_device.red_watch_time_minutes
+FROM ${ref("raw_p_channel_device_os_a3_govuk_tb")} dt_device
+LEFT JOIN ${ref("lookup_device_type_mapping")} device_mapping 
+  on device_mapping.device_type_id = dt_device.device_type
+LEFT JOIN ${ref("lookup_operating_system")} os_mapping 
+  on os_mapping.operating_system_id = dt_device.operating_system
+WHERE dt_device.video_id IS NOT NULL

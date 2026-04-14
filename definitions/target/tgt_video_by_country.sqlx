@@ -1,0 +1,47 @@
+-- Geographic breakdown fact model. DT only — no API equivalent at this grain.
+-- Coverage starts from Dec 2025 when DT became the primary source.
+-- Pre-Dec 2025 historical data has no country-level breakdown available.
+-- Aggregated to (date, video_id, country_code) grain by summing over
+-- live_or_on_demand and subscribed_status sub-dimensions.
+config {
+  type: "table",
+  assertions: {
+    uniqueKey: ["date", "video_id", "country_code"],
+    nonNull: ["date", "video_id", "country_code", "data_source", "views"]
+  },
+  columns: {
+    date: "YYYY-MM-DD date of data",
+    video_id: "The UUID for the video",
+    data_source: "Origin of the row: always 'dt' (DT only from Dec 2025)",
+    country_code: "ISO 3166 country code for the viewer",
+    country: "Human-readable country name from lookup (may be NULL if unmapped)",
+    views: "Total views from this country",
+    engaged_views: "Total engaged views from this country",
+    watch_time_minutes: "Total estimated minutes watched from this country",
+    comments: "Total comments from this country",
+    likes: "Total likes from this country",
+    shares: "Total shares from this country",
+    red_views: "Total YouTube Premium views from this country",
+    red_watch_time_minutes: "Total minutes watched by YouTube Premium members from this country"
+  }
+}
+
+SELECT
+  dt.date,
+  dt.video_id,
+  'dt'                                   AS data_source,
+  dt.country_code,
+  lcc.country,
+  SUM(dt.views)                          AS views,
+  SUM(dt.engaged_views)                  AS engaged_views,
+  SUM(dt.watch_time_minutes)             AS watch_time_minutes,
+  SUM(dt.comments)                       AS comments,
+  SUM(dt.likes)                          AS likes,
+  SUM(dt.shares)                         AS shares,
+  SUM(dt.red_views)                      AS red_views,
+  SUM(dt.red_watch_time_minutes)         AS red_watch_time_minutes
+FROM ${ref("stg_dt_channel_basic")} dt
+LEFT JOIN ${ref("lookup_country_code_mapping")} lcc
+  ON lcc.country_code = dt.country_code
+WHERE dt.date >= '2025-12-01'
+GROUP BY dt.date, dt.video_id, dt.country_code, lcc.country

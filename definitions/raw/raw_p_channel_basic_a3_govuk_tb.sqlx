@@ -26,7 +26,7 @@ config {
     average_view_duration_seconds: "The average length, in seconds, of video playbacks. In a playlist report, the metric indicates the average length, in seconds, of video playbacks that occurred in the context of a playlist.",
     average_view_duration_percentage: "The average percentage of a video watched during a video playback.",
     red_views: "The number of YouTube Red views.",
-    red_watch_teimt_minutes: "The number of minutes that YouTube Red subscribers watched content."
+    red_watch_time_minutes: "The number of minutes that YouTube Red subscribers watched content."
 
 
   }

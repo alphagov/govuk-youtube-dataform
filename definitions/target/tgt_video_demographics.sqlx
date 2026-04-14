@@ -1,0 +1,35 @@
+-- Age and gender demographic breakdown fact model. DT only — no API equivalent.
+-- Coverage starts from Dec 2025. API demographics were also unavailable from
+-- 16/03/2026 onwards due to an API outage (issue: 488961396).
+-- views_percentage is the proportion of viewers in each age/gender bucket.
+-- Rows are aggregated to (date, video_id, age_group, gender) grain by averaging
+-- views_percentage across country_code, subscribed_status, and live_or_on_demand.
+-- Note: averaging views_percentage is an approximation. For weighted accuracy,
+-- join to fct_video_performance_daily and weight by total views.
+config {
+  type: "table",
+  assertions: {
+    uniqueKey: ["date", "video_id", "age_group", "gender"],
+    nonNull: ["date", "video_id", "age_group", "gender", "data_source"]
+  },
+  columns: {
+    date: "YYYY-MM-DD date of data",
+    video_id: "The UUID for the video",
+    data_source: "Origin of the row: always 'dt' (DT only from Dec 2025)",
+    age_group: "Age group of the logged-in viewers",
+    gender: "Gender of the logged-in viewers",
+    views_percentage: "Approximate percentage of views attributed to this age/gender group"
+  }
+}
+
+SELECT
+  PARSE_DATE('%Y%m%d', date)             AS date,
+  video_id,
+  'dt'                                   AS data_source,
+  age_group,
+  gender,
+  AVG(views_percentage)                  AS views_percentage
+FROM ${ref("raw_p_channel_demographics_a1_govuk_tb")}
+WHERE video_id IS NOT NULL
+  AND date >= '20251201'
+GROUP BY date, video_id, age_group, gender

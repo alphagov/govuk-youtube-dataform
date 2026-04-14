@@ -1,0 +1,59 @@
+-- Traffic source breakdown fact model, stitching API historical with ongoing DT data.
+-- API is authoritative for pre-Dec 2025; DT is authoritative from Dec 2025 onwards.
+-- DT stores traffic_source_type as integer codes; API stores them as string labels
+-- (e.g. YT_SEARCH, EXT_URL). Full harmonisation to a single canonical label requires
+-- extending lookup_traffic_source_type_mapping with API string label mappings.
+-- For now: traffic_source_type_name is populated from the lookup for DT rows; API
+-- rows carry the raw API string label in traffic_source_type_name.
+-- DT rows are aggregated to (date, video_id, traffic_source_type) grain.
+config {
+  type: "table",
+  assertions: {
+    uniqueKey: ["date", "video_id", "traffic_source_type"],
+    nonNull: ["date", "video_id", "traffic_source_type", "data_source", "views"]
+  },
+  columns: {
+    date: "YYYY-MM-DD date of data",
+    video_id: "The UUID for the video",
+    data_source: "Origin of the row: 'api' (pre-Dec 2025) or 'dt' (Dec 2025 onwards)",
+    traffic_source_type: "Raw traffic source identifier: integer (as STRING) for DT; string label for API",
+    traffic_source_type_name: "Human-readable traffic source name from lookup (DT); raw API label (API)",
+    views: "Total views via this traffic source",
+    engaged_views: "Total engaged views via this traffic source",
+    watch_time_minutes: "Total estimated minutes watched via this traffic source"
+  }
+}
+
+-- Historical: API only (pre-Dec 2025)
+-- traffic_source_type is an API string label (e.g. YT_SEARCH, EXT_URL)
+SELECT
+  api.date,
+  api.video_id,
+  'api'                                  AS data_source,
+  api.traffic_source_type,
+  api.traffic_source_type               AS traffic_source_type_name,
+  api.views,
+  api.engaged_views,
+  api.watch_time_minutes
+FROM ${ref("stg_api_traffic_sources")} api
+WHERE api.date < '2025-12-01'
+
+UNION ALL
+
+-- Ongoing: DT (Dec 2025 onwards, authoritative for overlap period)
+-- traffic_source_type is an integer code; joined to lookup for human-readable name
+-- Aggregated to (date, video_id, traffic_source_type) grain
+SELECT
+  dt.date,
+  dt.video_id,
+  'dt'                                   AS data_source,
+  CAST(dt.traffic_source_type AS STRING) AS traffic_source_type,
+  lk.traffic_source_type_name,
+  SUM(dt.views)                          AS views,
+  SUM(dt.engaged_views)                  AS engaged_views,
+  SUM(dt.watch_time_minutes)             AS watch_time_minutes
+FROM ${ref("stg_dt_traffic_sources")} dt
+LEFT JOIN ${ref("lookup_traffic_source_type_mapping")} lk
+  ON lk.traffic_source_type_id = dt.traffic_source_type
+WHERE dt.date >= '2025-12-01'
+GROUP BY dt.date, dt.video_id, dt.traffic_source_type, lk.traffic_source_type_name

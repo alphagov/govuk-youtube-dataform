@@ -33,8 +33,8 @@ FROM UNNEST(
     dt_value      STRING,
     api_value     STRING
   >>[
-    ('LIVE',   'LIVE',      'liveStream'),
-    ('VOD',    'ON_DEMAND', 'VideoONDemand'),
-    ('SHORTS', 'ON_DEMAND', 'shorts')
+    ('LIVE',   'live',      'liveStream'),
+    ('VOD',    'on_demand', 'videoOnDemand'),
+    ('SHORTS', 'on_demand', 'shorts')
   ]
 )
