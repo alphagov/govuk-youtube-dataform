@@ -75,6 +75,9 @@ LEFT JOIN ${ref("lookup_video_id_title_mapping")} lv USING (video_id)
 WHERE dt.date >= '2025-12-01'
 GROUP BY dt.date, dt.video_id, lv.video_title)
 SELECT 
+sources.date,
+sources.video_id,
+sources.video_title,
 sources.data_source,
 sources.views,
 sources.engaged_views,
@@ -94,7 +97,6 @@ metadata.tags,
 metadata.categoryId,
 metadata.categoryTitle,
 metadata.channelId,
-metadata.duration_in_seconds,
 metadata.definition,
 metadata.caption,
 metadata.privacyStatus,

@@ -7,8 +7,8 @@
 config {
   type: "table",
   assertions: {
-    uniqueKey: ["date", "video_id", "traffic_source_type", "content_type"],
-    nonNull: ["date", "video_id", "traffic_source_type", "content_type", "views", "engaged_views", "watch_time_minutes"],
+    uniqueKey: ["date", "video_id", "traffic_source_type_name", "content_type"],
+    nonNull: ["date", "video_id", "traffic_source_type_name", "content_type", "views", "engaged_views", "watch_time_minutes"],
     rowConditions: []
   },
   columns: {
@@ -25,7 +25,7 @@ config {
 SELECT
   CAST(day AS DATE)                          AS date,
   video_id,
-  insightTrafficSourceType                   AS traffic_source_type,
+  insightTrafficSourceType                   AS traffic_source_type_name,
   creatorContentType                         AS content_type,
   views,
   engagedViews                               AS engaged_views,

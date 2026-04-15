@@ -4,7 +4,8 @@
 -- which model, for use in investigation.
 -- Expected result: empty — any returned rows indicate a grain violation.
 config {
-  type: "view"
+  type: "assertion",
+  description: "Fails if any rows are returned"
 }
 
 SELECT
@@ -47,10 +48,10 @@ SELECT
   'tgt_video_by_traffic_source'  AS model,
   date,
   video_id,
-  traffic_source_type            AS extra_dim,
+  traffic_source_type_name            AS extra_dim,
   COUNT(*)                       AS row_count
 FROM ${ref("tgt_video_by_traffic_source")}
-GROUP BY date, video_id, traffic_source_type
+GROUP BY date, video_id, traffic_source_type_name
 HAVING COUNT(*) > 1
 
 UNION ALL
