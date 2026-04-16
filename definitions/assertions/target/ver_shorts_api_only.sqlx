@@ -3,7 +3,8 @@
 -- so any SHORTS row with data_source != 'api' indicates a mapping or boundary error.
 -- Expected result: empty — any returned rows indicate a SHORTS contamination in DT rows.
 config {
-  type: "view"
+  type: "assertion",
+  description: "Fails if any rows are returned"
 }
 
 SELECT

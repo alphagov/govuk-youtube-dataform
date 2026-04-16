@@ -28,7 +28,7 @@ config {
     average_view_duration_percentage: "Average percentage of video watched (API only; NULL for DT rows)"
   }
 }
-
+WITH UNION_SOURCES AS (
 -- Historical: API only (pre-Dec 2025)
 SELECT
   api.date,
@@ -73,4 +73,35 @@ SELECT
 FROM ${ref("stg_dt_channel_basic")} dt
 LEFT JOIN ${ref("lookup_video_id_title_mapping")} lv USING (video_id)
 WHERE dt.date >= '2025-12-01'
-GROUP BY dt.date, dt.video_id, lv.video_title
+GROUP BY dt.date, dt.video_id, lv.video_title)
+SELECT 
+sources.date,
+sources.video_id,
+sources.video_title,
+sources.data_source,
+sources.views,
+sources.engaged_views,
+sources.watch_time_minutes,
+sources.comments,
+sources.likes,
+sources.dislikes,
+sources.shares,
+sources.red_views,
+sources.red_watch_time_minutes,
+sources.average_view_duration_seconds,
+sources.average_view_duration_percentage,
+metadata.duration_in_seconds,
+metadata.publishedAt,
+metadata.description,
+metadata.tags,
+metadata.categoryId,
+metadata.categoryTitle,
+metadata.channelId,
+metadata.definition,
+metadata.caption,
+metadata.privacyStatus,
+metadata.madeForKids,
+  embeddable
+FROM UNION_SOURCES as sources 
+LEFT JOIN ${ref("raw_video_id_metadata_mapping")} as metadata
+using (video_id)
