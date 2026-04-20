@@ -1,0 +1,43 @@
+-- Monthly shares-by-service fact model, stitching API historical with ongoing DT data.
+-- API is authoritative for pre-Dec 2025; DT is authoritative from Dec 2025 onwards.
+-- The API reports at month grain natively (raw_engagement_and_content_location).
+-- DT rows are aggregated from (date, video_id, live_or_on_demand, subscribed_status,
+-- country_code, sharing_service) to (video_id, month, sharing_service) grain by summing shares.
+config {
+  type: "table",
+  assertions: {
+    uniqueKey: ["video_id", "month", "sharing_service"],
+    nonNull: ["video_id", "month", "sharing_service", "data_source", "shares"]
+  },
+  columns: {
+    video_id: "The UUID for the video",
+    month: "First day of the month the data covers (YYYY-MM-01)",
+    data_source: "Origin of the row: 'api' (pre-Dec 2025) or 'dt' (Dec 2025 onwards)",
+    sharing_service: "The service used to share the video (e.g. COPY_PASTE, TWITTER, WHATS_APP)",
+    shares: "Total number of times the video was shared via this service in the month"
+  }
+}
+
+-- Historical: API only (pre-Dec 2025)
+SELECT
+  video_id,
+  MONTH                                   AS month,
+  'api'                                   AS data_source,
+  sharingService                          AS sharing_service,
+  shares
+FROM ${ref("raw_engagement_and_content_location")}
+WHERE MONTH < '2025-12-01'
+
+UNION ALL
+
+-- Ongoing: DT (Dec 2025 onwards), aggregated to (video_id, month, sharing_service) grain
+SELECT
+  video_id,
+  DATE_TRUNC(PARSE_DATE('%Y%m%d', date), MONTH) AS month,
+  'dt'                                    AS data_source,
+  sharing_service,
+  SUM(shares)                             AS shares
+FROM ${ref("raw_p_channel_sharing_service_a1_govuk_tb")}
+WHERE PARSE_DATE('%Y%m%d', date) >= '2025-12-01'
+  AND video_id IS NOT NULL
+GROUP BY video_id, month, sharing_service
