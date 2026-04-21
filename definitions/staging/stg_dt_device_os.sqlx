@@ -9,8 +9,18 @@
 -- the upper bound date filter in src_p_channel_device_os_a3_govuk_tb to extend
 -- coverage to all ongoing DT data.
 config {
-  type: "table",
-  tags: ["staging"],,
+  type: "incremental",
+  tags: ["staging"],
+  uniqueKey: ["date", "video_id", "device_type_name", "operating_system_name", "live_or_on_demand", "subscribed_status", "country_code"],
+  bigquery: {
+    partitionBy: "date",
+    updatePartitionFilter: "date >= DATE_SUB(CURRENT_DATE(), INTERVAL 90 DAY)"
+  },
+  uniqueKey: ["date", "video_id", "live_or_on_demand", "subscribed_status", "country_code"],
+  bigquery: {
+    partitionBy: "date",
+    updatePartitionFilter: "date >= DATE_SUB(CURRENT_DATE(), INTERVAL 120 DAY)"
+  },
   assertions: {
     uniqueKey: ["date", "video_id", "device_type_name", "operating_system_name", "live_or_on_demand", "subscribed_status", "country_code"],
     nonNull: ["date", "video_id", "device_type_name", "operating_system_name", "views", "watch_time_minutes"]
@@ -32,7 +42,7 @@ config {
     red_watch_time_minutes: "Minutes watched by YouTube Premium members"
   }
 }
-
+WITH CTE1 AS (
 SELECT
   PARSE_DATE('%Y%m%d', dt_device.date)           AS date,
   dt_device.video_id,
@@ -53,4 +63,27 @@ LEFT JOIN ${ref("lookup_device_type_mapping")} device_mapping
   on device_mapping.device_type_id = dt_device.device_type
 LEFT JOIN ${ref("lookup_operating_system")} os_mapping 
   on os_mapping.operating_system_id = dt_device.operating_system
-WHERE dt_device.video_id IS NOT NULL
+  WHERE dt_device.video_id IS NOT NULL)
+SELECT 
+date,
+video_id,
+live_or_on_demand,
+subscribed_status,
+country_code,
+device_type_name,
+operating_system_name,
+views,
+engaged_views,
+watch_time_minutes,
+average_view_duration_seconds,
+average_view_duration_percentage,
+red_views,
+red_watch_time_minutes
+FROM CTE1 
+${ when(incremental(), `
+  WHERE date = (
+    SELECT MAX(src.date)
+    FROM ${ref("raw_p_channel_basic_a3_govuk_tb")} src
+    WHERE src.date NOT IN (SELECT DISTINCT date FROM ${self()})
+  )
+`) }

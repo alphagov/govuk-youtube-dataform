@@ -7,8 +7,13 @@
 -- the upper bound date filter in src_p_channel_traffic_source_a3_govuk_tb to extend
 -- coverage to all ongoing DT data.
 config {
-  type: "table",
+  type: "incremental",
   tags: ["staging"],
+  uniqueKey: ["date", "video_id", "traffic_source_type", "traffic_source_detail", "live_or_on_demand", "subscribed_status", "country_code"],
+  bigquery: {
+    partitionBy: "date",
+    updatePartitionFilter: "date >= DATE_SUB(CURRENT_DATE(), INTERVAL 120 DAY)"
+  },
   assertions: {
     uniqueKey: ["date", "video_id", "traffic_source_type", "traffic_source_detail", "live_or_on_demand", "subscribed_status", "country_code"],
     nonNull: ["date", "video_id", "traffic_source_type", "views", "watch_time_minutes"]
@@ -48,3 +53,10 @@ SELECT
   red_watch_time_minutes
 FROM ${ref("raw_p_channel_traffic_source_a3_govuk_tb")}
 WHERE video_id IS NOT NULL
+${ when(incremental(), `
+  AND PARSE_DATE('%Y%m%d', date) = (
+    SELECT MAX(PARSE_DATE('%Y%m%d', src.date))
+    FROM ${ref("raw_p_channel_traffic_source_a3_govuk_tb")} src
+    WHERE PARSE_DATE('%Y%m%d', src.date) NOT IN (SELECT DISTINCT date FROM ${self()})
+  )
+`) }
