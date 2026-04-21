@@ -2,6 +2,7 @@
 -- A table that contains the data transfer sharing information
 config {
   type: "view",
+  tags: ["raw"],
   assertions : {
     uniqueKey: ["date","channel_id", "video_id", "live_or_on_demand","subscribed_status","country_code","sharing_service"],
     nonNull: ["date","channel_id", "video_id", "live_or_on_demand","subscribed_status","country_code","sharing_service","shares"],
@@ -31,4 +32,4 @@ SELECT
     shares
     FROM
  `gds-social-data.govuk_youtube_channel.p_channel_sharing_service_a1_govuk_tb`
- WHERE PARSE_DATE('%Y%m%d', date) BETWEEN DATE('2025-12-01') AND DATE('2026-02-28')
+ WHERE PARSE_DATE('%Y%m%d', date) >= ('2025-12-01')
