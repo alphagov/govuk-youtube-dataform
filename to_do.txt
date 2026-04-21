@@ -20,3 +20,9 @@ Before production
 
 
 
+new
+- a query to track the change in averageMinutesWatched between api and dt
+  - The API data is always a whole number (1.0, 2.0) and rounded down
+  - The dt values are expected to be higher 
+  - create a table that outlines the drop in average minutes watched, and other API metrics that have been Normalised 
+

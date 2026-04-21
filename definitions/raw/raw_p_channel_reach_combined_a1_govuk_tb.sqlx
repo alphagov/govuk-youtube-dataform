@@ -1,5 +1,6 @@
 config {
     type: "view",
+  tags: ["raw"],
     assertions: {
         uniqueKey: ["date", "channel_id", "video_id", "device_type", "operating_system", "traffic_source_type", "traffic_source_detail"],
         nonNull: ["date", "channel_id", "video_id", "device_type", "operating_system", "traffic_source_type"], // traffic_source_detail can return nulls
@@ -32,5 +33,4 @@ SELECT
   video_thumbnail_impressions
 FROM
   `gds-social-data.govuk_youtube_channel.p_channel_reach_combined_a1_govuk_tb`
-WHERE
-PARSE_DATE('%Y%m%d', date) BETWEEN DATE('2025-12-01') AND DATE('2026-02-28')
+ WHERE PARSE_DATE('%Y%m%d', date) >= ('2025-12-01')

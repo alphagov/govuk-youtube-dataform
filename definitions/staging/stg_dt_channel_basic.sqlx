@@ -1,7 +1,13 @@
 
 -- A table that contains the processed data transfer table channel_basic information
 config {
-  type: "table",
+ type: "incremental",
+  tags: ["staging"],
+  uniqueKey: ["date", "channel_id", "video_id", "live_or_on_demand", "subscribed_status", "country_code"],
+  bigquery: {
+    partitionBy: "date",
+    updatePartitionFilter: "date >= DATE_SUB(CURRENT_DATE(), INTERVAL 120 DAY)"
+  },
   assertions : {
     uniqueKey: ["date","channel_id", "video_id", "live_or_on_demand","subscribed_status","country_code"],
     nonNull: ["date","channel_id","live_or_on_demand","subscribed_status","country_code"], // video_id can return null for about 50 videos all on 20251213
@@ -31,51 +37,30 @@ config {
 
   }
 }
-WITH CTE1 AS (
-SELECT 
+SELECT
     date,
-    channel_id ,
-    video_id , -- contains nulls 
-    live_or_on_demand ,
-    subscribed_status ,
-    country_code ,
-    views ,
-    engaged_views ,
-    comments ,
-    likes ,
-    dislikes ,
-    shares ,
-    watch_time_minutes ,
-    average_view_duration_seconds ,
-    average_view_duration_percentage ,
-    red_views ,
-    red_watch_time_minutes 
-    FROM ${ref("raw_p_channel_basic_a3_govuk_tb")}
-
- WHERE video_id IS NOT NULL) 
- SELECT 
-    date,
-    channel_id ,
-    video_id , -- contains nulls 
-    live_or_on_demand ,
-    subscribed_status ,
+    channel_id,
+    video_id,
+    live_or_on_demand,
+    subscribed_status,
     country_code,
-    SUM(views) AS views ,
-    SUM(engaged_views) AS engaged_views ,
-    SUM(comments) AS comments ,
-    SUM(likes) AS likes ,
-    SUM(dislikes) AS dislikes ,
-    SUM(shares) AS shares ,
-    SUM(watch_time_minutes) AS watch_time_minutes ,
-    SUM(average_view_duration_seconds) AS average_view_duration_seconds ,
-    SUM(average_view_duration_percentage) AS average_view_duration_percentage ,
-    SUM(red_views) AS red_views ,
-    SUM(red_watch_time_minutes) AS red_watch_time_minutes 
- from CTE1 
- GROUP BY 
-    date,
-    channel_id ,
-    video_id , -- contains nulls 
-    live_or_on_demand ,
-    subscribed_status ,
-    country_code
+    views,
+    engaged_views,
+    comments,
+    likes,
+    dislikes,
+    shares,
+    watch_time_minutes,
+    average_view_duration_seconds,
+    average_view_duration_percentage,
+    red_views,
+    red_watch_time_minutes
+FROM ${ref("raw_p_channel_basic_a3_govuk_tb")}
+WHERE video_id IS NOT NULL
+${ when(incremental(), `
+  AND date = (
+    SELECT MAX(src.date)
+    FROM ${ref("raw_p_channel_basic_a3_govuk_tb")} src
+    WHERE src.date NOT IN (SELECT DISTINCT date FROM ${self()})
+  )
+`) }

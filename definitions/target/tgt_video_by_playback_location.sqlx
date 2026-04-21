@@ -1,0 +1,72 @@
+-- Daily playback location breakdown fact model, stitching API historical with ongoing DT data.
+-- API is authoritative for pre-Dec 2025; DT is authoritative from Dec 2025 onwards.
+-- Grain: (date, video_id, playback_location_type_name)
+--
+-- Harmonisation note: the API reports playback_location_type as string labels (e.g. WATCH,
+-- EMBEDDED, YT_CHANNEL); DT reports them as integer codes (e.g. 0, 1, 2). API labels are
+-- mapped to canonical names inline via CASE WHEN to align with lookup_playback_location_type.
+-- If new API labels appear, update the CASE WHEN in this file.
+--
+-- average_view_duration columns are omitted: the API does not report them at playback-location
+-- grain, and DT values cannot be reliably aggregated across sub-dimensions.
+config {
+  type: "table",
+  assertions: {
+    uniqueKey: ["date", "video_id", "playback_location_type_name"],
+    nonNull: ["date", "video_id", "data_source", "playback_location_type_name"]
+  },
+  columns: {
+    date: "YYYY-MM-DD date of data",
+    video_id: "The UUID for the video",
+    data_source: "Origin of the row: 'api' (pre-Dec 2025) or 'dt' (Dec 2025 onwards)",
+    playback_location_type_name: "Canonical name of where the video was viewed (e.g. 'YouTube watch page or app', 'Embedded player')",
+    views: "Total views at this playback location",
+    engaged_views: "Total engaged views at this playback location",
+    watch_time_minutes: "Total estimated minutes watched at this playback location",
+    red_views: "Total YouTube Premium views at this playback location (DT only; NULL for API rows)",
+    red_watch_time_minutes: "Total minutes watched by YouTube Premium members at this playback location (DT only; NULL for API rows)"
+  }
+}
+
+-- Historical: API only (pre-Dec 2025)
+-- Map API string labels to canonical names matching lookup_playback_location_type
+SELECT
+  api.date,
+  api.video_id,
+  'api'                                   AS data_source,
+  CASE api.playback_location_type
+    WHEN 'WATCH'         THEN 'YouTube watch page or app'
+    WHEN 'EMBEDDED'      THEN 'Embedded player'
+    WHEN 'YT_CHANNEL'    THEN 'YouTube channel page'
+    WHEN 'SHORTS_FEED'   THEN 'YouTube Shorts feed'
+    WHEN 'YT_SEARCH'     THEN 'YouTube search results'
+    WHEN 'YT_OTHER_PAGE' THEN 'YouTube home, subscriptions, or browse'
+    ELSE 'Other'
+  END                                     AS playback_location_type_name,
+  api.views,
+  api.engaged_views,
+  api.watch_time_minutes,
+  NULL                                    AS red_views,
+  NULL                                    AS red_watch_time_minutes
+FROM ${ref("stg_api_playback_location")} api
+WHERE api.date < '2025-12-01'
+
+UNION ALL
+
+-- Ongoing: DT (Dec 2025 onwards), aggregated to (date, video_id, playback_location_type_name)
+-- Drops sub-dimensions: live_or_on_demand, subscribed_status, country_code, playback_location_detail
+SELECT
+  dt.date,
+  dt.video_id,
+  'dt'                                    AS data_source,
+  lpl.playback_location_type_name,
+  SUM(dt.views)                           AS views,
+  SUM(dt.engaged_views)                   AS engaged_views,
+  SUM(dt.watch_time_minutes)              AS watch_time_minutes,
+  SUM(dt.red_views)                       AS red_views,
+  SUM(dt.red_watch_time_minutes)          AS red_watch_time_minutes
+FROM ${ref("stg_dt_playback_location")} dt
+LEFT JOIN ${ref("lookup_playback_location_type")} lpl
+  ON CAST(dt.playback_location_type AS INT64) = lpl.playback_location_type_id
+WHERE dt.date >= '2025-12-01'
+GROUP BY dt.date, dt.video_id, lpl.playback_location_type_name

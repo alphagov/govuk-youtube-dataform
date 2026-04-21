@@ -2,15 +2,16 @@
 -- A table that contains the yearly output for playback location
 config {
   type: "view",
+  tags: ["raw"],
   assertions : {
-    uniqueKey: ["video_id","day","insightPlaybackLocationType", "creatorContentType"],
-    nonNull: ["video_id","day","insightPlaybackLocationType", "creatorContentType","engagedViews", "views", "estimatedMinutesWatched"],
+    uniqueKey: ["video_id","date","insightPlaybackLocationType", "creatorContentType"],
+    nonNull: ["video_id","date","insightPlaybackLocationType", "creatorContentType","engagedViews", "views", "estimatedMinutesWatched"],
     rowConditions: [
     ]
   },
   columns: {
     video_id: "the video id",
-    day: "YYYY-MM-DD date of data",
+    date: "YYYY-MM-DD date of data",
     insightPlaybackLocationType: "Where the video was viewed e.g. embedded, shorts-feed, WATCh (youtube)",
     creatorContentType: " content type, [shorts, VideoONDemand, liveStream]",
     views: "views where the user watches a portion of the video",
@@ -20,12 +21,12 @@ config {
 }
 
 SELECT 
-    video_id,
-    day,
-    insightPlaybackLocationType,
-    creatorContentType,
-    views,
-    engagedViews,
-    estimatedMinutesWatched
+    CAST(video_id AS STRING) AS video_id,
+    CAST(day AS DATE) AS date,
+    CAST(insightPlaybackLocationType AS STRING) AS insightPlaybackLocationType,
+    CAST(creatorContentType AS STRING) AS creatorContentType,
+    CAST(views AS INT) AS views,
+    CAST(engagedViews AS INT) AS engagedViews,
+    CAST(estimatedMinutesWatched AS FLOAT64) AS estimatedMinutesWatched
 FROM
  `gds-social-data.govuk_youtube_channel_staging.playback_location`

@@ -2,15 +2,16 @@
 -- A table that contains the yearly output for engagement and content rpport data
 config {
   type: "view",
+  tags: ["raw"],
   assertions : {
-    uniqueKey: ["video_id","day", "deviceType", "operatingSystem"],
-    nonNull: ["video_id","day", "deviceType", "operatingSystem"],
+    uniqueKey: ["video_id","date", "deviceType", "operatingSystem"],
+    nonNull: ["video_id","date", "deviceType", "operatingSystem"],
     rowConditions: [
     ]
   },
   columns: {
     video_id: "the video id",
-    day: "YYYY-MM-DD date of data",
+    date: "YYYY-MM-DD date of data",
     deviceType: "device type, TV, tablet, modbile, desktop",
     operatingSystem: "Operating system of device, Amazon_fireOS, Andforid, Chrome_Os, IOS, Machintosh etc",
     engagedViews: "engaged Views where a user has seen the thumbnail/port of the video autoplaying via thumbnail",
@@ -20,12 +21,12 @@ config {
 }
 
 SELECT 
-    video_id,
-    day,
-    deviceType,
-    operatingSystem,
-    engagedViews,
-    views,
-    estimatedMinutesWatched
+    CAST(video_id AS STRING) AS video_id,
+    CAST(day AS DATE) AS date,
+    CAST(deviceType AS STRING) AS deviceType,
+    CAST(operatingSystem AS STRING) AS operatingSystem,
+    CAST(engagedViews AS INT) as engagedViews,
+    CAST(views AS INT) AS views,
+    CAST(estimatedMinutesWatched AS FLOAT64) AS estimatedMinutesWatched
 FROM
  `gds-social-data.govuk_youtube_channel_staging.operating_system_and_device`

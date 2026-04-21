@@ -4,7 +4,12 @@
 -- with DT naming conventions. DT and API use compatible string values for these dimensions
 -- so they can be joined directly in fact models.
 config {
-  type: "table",
+  type: "incremental",
+  tags: ["staging"],
+  bigquery: {
+    partitionBy: "date",
+    updatePartitionFilter: "date >= DATE_SUB(CURRENT_DATE(), INTERVAL 120 DAY)"
+  },
   assertions: {
     uniqueKey: ["date", "video_id", "device_type_name", "operating_system_name"],
     nonNull: ["date", "video_id", "device_type_name", "operating_system_name", "views", "engaged_views", "watch_time_minutes"],
@@ -22,7 +27,7 @@ config {
 }
 
 SELECT
-  CAST(day AS DATE)                          AS date,
+  date,
   video_id,
   deviceType                                 AS device_type_name,
   operatingSystem                            AS operating_system_name,
@@ -30,3 +35,10 @@ SELECT
   engagedViews                               AS engaged_views,
   estimatedMinutesWatched                    AS watch_time_minutes
 FROM ${ref("raw_operating_system_and_device")}
+  ${ when(incremental(), `
+    WHERE date = (
+      SELECT MAX(src.date)
+      FROM ${ref("raw_operating_system_and_device")} src
+      WHERE src.date NOT IN (SELECT DISTINCT date FROM ${self()})
+    )
+  `) }

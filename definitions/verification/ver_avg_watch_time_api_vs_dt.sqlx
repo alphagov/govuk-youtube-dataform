@@ -1,0 +1,191 @@
+-- Verification model comparing average view duration and total watch time between the
+-- YouTube Analytics API and the Data Transfer source during the overlap window
+-- (Dec 2025 – Feb 2026), at both daily and monthly grain.
+--
+-- Two grains are returned in a single view, distinguished by the `grain` column:
+--   'daily'   — (date, video_id) level
+--   'monthly' — (month, video_id) level, weighted across all days in the month
+--
+-- KEY METHODOLOGICAL NOTE — weighted average for DT:
+-- stg_dt_channel_basic groups by (date, channel_id, video_id, live_or_on_demand,
+-- subscribed_status, country_code), which matches the raw table's unique key, so its
+-- average_view_duration_seconds values are correct at that grain.
+-- However, to aggregate further to (date, video_id) or (month, video_id) — collapsing
+-- the sub-dimensions — a views-weighted average is required:
+--   SAFE_DIVIDE(SUM(views * average_view_duration_seconds), SUM(views))
+-- This model reads from raw_p_channel_basic_a3_govuk_tb to access the sub-dimension
+-- rows needed for that weighting.
+--
+-- EXPECTED PATTERNS:
+-- - DT watch_time_minutes ≥ API watch_time_minutes: the API rounds estimatedMinutesWatched
+--   to the nearest minute, so small views will lose fractional minutes. Expect DT to be
+--   slightly higher, especially for videos with many short views.
+-- - avg_duration_delta_seconds near 0: unlike total watch time, average duration is not
+--   affected by the rounding issue. Large deltas here warrant investigation.
+-- - watch_time_pct_diff > 5%: flag for investigation; likely caused by rounding on
+--   high-volume videos with short average view durations.
+
+config {
+  type: "view",
+  tags: ["verification"]
+}
+
+WITH
+
+-- API: daily grain (already at video_id level in stg_api_user_activity)
+api_daily AS (
+  SELECT
+    date,
+    video_id,
+    views                                       AS api_views,
+    watch_time_minutes                          AS api_watch_time_minutes,
+    average_view_duration_seconds               AS api_avg_duration_seconds,
+    average_view_duration_percentage            AS api_avg_duration_pct
+  FROM ${ref("stg_api_user_activity")}
+  WHERE date BETWEEN '2025-12-01' AND '2026-02-28'
+),
+
+-- DT: weighted average from sub-dimension grain → (date, video_id)
+dt_daily AS (
+  SELECT
+    PARSE_DATE('%Y%m%d', date)                  AS date,
+    video_id,
+    SUM(views)                                  AS dt_views,
+    SUM(watch_time_minutes)                     AS dt_watch_time_minutes,
+    SAFE_DIVIDE(
+      SUM(CAST(views AS FLOAT64) * average_view_duration_seconds),
+      SUM(views)
+    )                                           AS dt_weighted_avg_duration_seconds,
+    SAFE_DIVIDE(
+      SUM(CAST(views AS FLOAT64) * average_view_duration_percentage),
+      SUM(views)
+    )                                           AS dt_weighted_avg_duration_pct
+  FROM ${ref("raw_p_channel_basic_a3_govuk_tb")}
+  WHERE PARSE_DATE('%Y%m%d', date) BETWEEN '2025-12-01' AND '2026-02-28'
+    AND video_id IS NOT NULL
+  GROUP BY date, video_id
+),
+
+-- API: weighted average from daily rows → (month, video_id)
+api_monthly AS (
+  SELECT
+    DATE_TRUNC(date, MONTH)                     AS month,
+    video_id,
+    SUM(views)                                  AS api_views,
+    SUM(watch_time_minutes)                     AS api_watch_time_minutes,
+    SAFE_DIVIDE(
+      SUM(CAST(views AS FLOAT64) * average_view_duration_seconds),
+      SUM(views)
+    )                                           AS api_weighted_avg_duration_seconds,
+    SAFE_DIVIDE(
+      SUM(CAST(views AS FLOAT64) * average_view_duration_percentage),
+      SUM(views)
+    )                                           AS api_weighted_avg_duration_pct
+  FROM ${ref("stg_api_user_activity")}
+  WHERE date BETWEEN '2025-12-01' AND '2026-02-28'
+  GROUP BY month, video_id
+),
+
+-- DT: weighted average from sub-dimension grain → (month, video_id)
+dt_monthly AS (
+  SELECT
+    DATE_TRUNC(PARSE_DATE('%Y%m%d', date), MONTH) AS month,
+    video_id,
+    SUM(views)                                  AS dt_views,
+    SUM(watch_time_minutes)                     AS dt_watch_time_minutes,
+    SAFE_DIVIDE(
+      SUM(CAST(views AS FLOAT64) * average_view_duration_seconds),
+      SUM(views)
+    )                                           AS dt_weighted_avg_duration_seconds,
+    SAFE_DIVIDE(
+      SUM(CAST(views AS FLOAT64) * average_view_duration_percentage),
+      SUM(views)
+    )                                           AS dt_weighted_avg_duration_pct
+  FROM ${ref("raw_p_channel_basic_a3_govuk_tb")}
+  WHERE PARSE_DATE('%Y%m%d', date) BETWEEN '2025-12-01' AND '2026-02-28'
+    AND video_id IS NOT NULL
+  GROUP BY month, video_id
+)
+
+-- ── Daily grain ──────────────────────────────────────────────────────────────
+SELECT
+  'daily'                                       AS grain,
+  COALESCE(api.date, dt.date)                   AS period,
+  COALESCE(api.video_id, dt.video_id)           AS video_id,
+
+  -- View counts (for context and weighted-average validation)
+  api.api_views,
+  dt.dt_views,
+
+  -- Total watch time comparison (rounding effect)
+  api.api_watch_time_minutes,
+  dt.dt_watch_time_minutes,
+  dt.dt_watch_time_minutes - api.api_watch_time_minutes
+                                                AS watch_time_delta_minutes,
+  ROUND(SAFE_DIVIDE(
+    dt.dt_watch_time_minutes - api.api_watch_time_minutes,
+    api.api_watch_time_minutes
+  ) * 100, 2)                                   AS watch_time_pct_diff,
+
+  -- Average view duration comparison (seconds)
+  api.api_avg_duration_seconds,
+  dt.dt_weighted_avg_duration_seconds,
+  dt.dt_weighted_avg_duration_seconds - api.api_avg_duration_seconds
+                                                AS avg_duration_delta_seconds,
+  ROUND(SAFE_DIVIDE(
+    dt.dt_weighted_avg_duration_seconds - api.api_avg_duration_seconds,
+    api.api_avg_duration_seconds
+  ) * 100, 2)                                   AS avg_duration_pct_diff,
+
+  -- Average view duration comparison (percentage of video watched)
+  api.api_avg_duration_pct,
+  dt.dt_weighted_avg_duration_pct,
+  dt.dt_weighted_avg_duration_pct - api.api_avg_duration_pct
+                                                AS avg_duration_pct_delta,
+
+  -- Provenance flags
+  api.date IS NULL                              AS dt_only,
+  dt.date IS NULL                               AS api_only
+
+FROM api_daily api
+FULL OUTER JOIN dt_daily dt USING (date, video_id)
+
+UNION ALL
+
+-- ── Monthly grain ────────────────────────────────────────────────────────────
+SELECT
+  'monthly'                                     AS grain,
+  COALESCE(api.month, dt.month)                 AS period,
+  COALESCE(api.video_id, dt.video_id)           AS video_id,
+
+  api.api_views,
+  dt.dt_views,
+
+  api.api_watch_time_minutes,
+  dt.dt_watch_time_minutes,
+  dt.dt_watch_time_minutes - api.api_watch_time_minutes
+                                                AS watch_time_delta_minutes,
+  ROUND(SAFE_DIVIDE(
+    dt.dt_watch_time_minutes - api.api_watch_time_minutes,
+    api.api_watch_time_minutes
+  ) * 100, 2)                                   AS watch_time_pct_diff,
+
+  api.api_weighted_avg_duration_seconds         AS api_avg_duration_seconds,
+  dt.dt_weighted_avg_duration_seconds,
+  dt.dt_weighted_avg_duration_seconds - api.api_weighted_avg_duration_seconds
+                                                AS avg_duration_delta_seconds,
+  ROUND(SAFE_DIVIDE(
+    dt.dt_weighted_avg_duration_seconds - api.api_weighted_avg_duration_seconds,
+    api.api_weighted_avg_duration_seconds
+  ) * 100, 2)                                   AS avg_duration_pct_diff,
+
+  api.api_weighted_avg_duration_pct             AS api_avg_duration_pct,
+  dt.dt_weighted_avg_duration_pct,
+  dt.dt_weighted_avg_duration_pct - api.api_weighted_avg_duration_pct
+                                                AS avg_duration_pct_delta,
+
+  api.month IS NULL                             AS dt_only,
+  dt.month IS NULL                              AS api_only
+
+FROM api_monthly api
+FULL OUTER JOIN dt_monthly dt USING (month, video_id)
