@@ -2,6 +2,7 @@
 -- A table that contains the data transfer table channel_basic information
 config {
   type: "view",
+  tags: ["raw"],
   assertions : {
     uniqueKey: ["date","channel_id", "video_id", "live_or_on_demand","subscribed_status","country_code"],
     nonNull: ["date","channel_id","live_or_on_demand","subscribed_status","country_code"], // video_id can return null for about 50 videos all on 20251213
@@ -52,4 +53,4 @@ SELECT
     CAST(red_watch_time_minutes AS FLOAT64) AS red_watch_time_minutes
     FROM
  `gds-social-data.govuk_youtube_channel.p_channel_basic_a3_govuk_tb`
- WHERE PARSE_DATE('%Y%m%d', date) BETWEEN DATE('2025-12-01') AND DATE('2026-02-28')
+  WHERE PARSE_DATE('%Y%m%d', date) >= ('2025-12-01')

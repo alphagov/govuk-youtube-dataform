@@ -5,6 +5,7 @@
 -- so they can be joined directly in fact models.
 config {
   type: "table",
+  tags: ["staging"],
   assertions: {
     uniqueKey: ["date", "video_id", "device_type_name", "operating_system_name"],
     nonNull: ["date", "video_id", "device_type_name", "operating_system_name", "views", "engaged_views", "watch_time_minutes"],
@@ -22,7 +23,7 @@ config {
 }
 
 SELECT
-  CAST(day AS DATE)                          AS date,
+  date,
   video_id,
   deviceType                                 AS device_type_name,
   operatingSystem                            AS operating_system_name,

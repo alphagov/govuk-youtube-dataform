@@ -2,6 +2,7 @@
 -- A table that contains the processed data transfer table channel_basic information
 config {
   type: "table",
+  tags: ["staging"],
   assertions : {
     uniqueKey: ["date","channel_id", "video_id", "live_or_on_demand","subscribed_status","country_code"],
     nonNull: ["date","channel_id","live_or_on_demand","subscribed_status","country_code"], // video_id can return null for about 50 videos all on 20251213
@@ -35,7 +36,7 @@ WITH CTE1 AS (
 SELECT 
     date,
     channel_id ,
-    video_id , -- contains nulls 
+    video_id , 
     live_or_on_demand ,
     subscribed_status ,
     country_code ,
@@ -52,11 +53,19 @@ SELECT
     red_watch_time_minutes 
     FROM ${ref("raw_p_channel_basic_a3_govuk_tb")}
 
- WHERE video_id IS NOT NULL) 
+  WHERE video_id IS NOT NULL
+  ${ when(incremental(), `
+    AND date = (
+      SELECT MAX(src.date)
+      FROM ${ref("raw_p_channel_basic_a3_govuk_tb")} src
+      WHERE src.date NOT IN (SELECT DISTINCT date FROM ${self()})
+    )
+  `) }
+) 
  SELECT 
     date,
     channel_id ,
-    video_id , -- contains nulls 
+    video_id , 
     live_or_on_demand ,
     subscribed_status ,
     country_code,
@@ -75,7 +84,7 @@ SELECT
  GROUP BY 
     date,
     channel_id ,
-    video_id , -- contains nulls 
+    video_id , 
     live_or_on_demand ,
     subscribed_status ,
     country_code

@@ -1,6 +1,7 @@
 -- a table containging the data transfer playback location infomation
 config {
     type: "view",
+  tags: ["raw"],
     assertions: {
         uniqueKey: ["date", "channel_id", "video_id", "live_or_on_demand", "subscribed_status", "country_code","playback_location_type","playback_location_detail"],
         nonNull: ["date", "channel_id", "video_id", "live_or_on_demand", "subscribed_status", "country_code","playback_location_type","playback_location_detail","views","engaged_views","watch_time_minutes","average_view_duration_seconds","average_view_duration_percentage","red_views","red_watch_time_minutes"],
@@ -44,5 +45,4 @@ SELECT
     red_watch_time_minutes
 FROM
   `gds-social-data.govuk_youtube_channel.p_channel_playback_location_a3_govuk_tb`
-WHERE
-  PARSE_DATE('%Y%m%d', date) BETWEEN DATE('2025-12-01') AND DATE('2026-02-28')
+ WHERE PARSE_DATE('%Y%m%d', date) >= ('2025-12-01') AND playback_location_detail IS NOT NULL
