@@ -4,7 +4,12 @@
 -- content_type to align with DT naming conventions.
 -- Note: 'shorts' is only present in this API source; DT only captures LIVE/ON_DEMAND.
 config {
-  type: "table",
+type: "incremental",
+  bigquery: {
+    partitionBy: "date",
+    updatePartitionFilter: "date >= DATE_SUB(CURRENT_DATE(), INTERVAL 120 DAY)"
+  },
+  tags: ["staging"],
   assertions: {
     uniqueKey: ["date", "video_id", "content_type"],
     nonNull: ["date", "video_id", "content_type", "views", "engaged_views", "watch_time_minutes"],
@@ -36,3 +41,10 @@ SELECT
   averageViewDuration                        AS average_view_duration_seconds,
   averageViewPercentage                      AS average_view_duration_percentage
 FROM ${ref("raw_playback_details")}
+  ${ when(incremental(), `
+    WHERE date = (
+      SELECT MAX(src.date)
+      FROM ${ref("raw_p_channel_basic_a3_govuk_tb")} src
+      WHERE src.date NOT IN (SELECT DISTINCT date FROM ${self()})
+    )
+  `) }

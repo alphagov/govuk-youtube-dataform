@@ -5,7 +5,12 @@
 -- Note: DT stores traffic_source_type as integer codes; API uses string labels.
 -- A lookup_traffic_source_type table will be needed to harmonise these in fact models.
 config {
-  type: "table",
+type: "incremental",
+  bigquery: {
+    partitionBy: "date",
+    updatePartitionFilter: "date >= DATE_SUB(CURRENT_DATE(), INTERVAL 120 DAY)"
+  },
+  tags: ["staging"],
   assertions: {
     uniqueKey: ["date", "video_id", "traffic_source_type_name", "content_type"],
     nonNull: ["date", "video_id", "traffic_source_type_name", "content_type", "views", "engaged_views", "watch_time_minutes"],
@@ -31,3 +36,10 @@ SELECT
   engagedViews                               AS engaged_views,
   estimatedMinutesWatched                    AS watch_time_minutes
 FROM ${ref("raw_traffic_sources")}
+  ${ when(incremental(), `
+    WHERE date = (
+      SELECT MAX(src.date)
+      FROM ${ref("raw_traffic_sources")} src
+      WHERE src.date NOT IN (SELECT DISTINCT date FROM ${self()})
+    )
+  `) }

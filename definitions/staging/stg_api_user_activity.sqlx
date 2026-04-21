@@ -1,7 +1,12 @@
 
 -- A table that contains the data for user_activity
 config {
-  type: "table",
+type: "incremental",
+  bigquery: {
+    partitionBy: "date",
+    updatePartitionFilter: "date >= DATE_SUB(CURRENT_DATE(), INTERVAL 120 DAY)"
+  },
+  tags: ["staging"],
   assertions : {
     uniqueKey: ["video_id","date"],
     nonNull: ["video_id","date","engaged_views","views","red_Views","comments","likes","dislikes","shares","watch_time_minutes","red_watch_time_minutes","average_view_duration_seconds","average_view_duration_percentage"],
@@ -40,5 +45,11 @@ CAST(estimatedRedMinutesWatched AS FLOAT64) AS red_watch_time_minutes,
 CAST(averageViewDuration AS FLOAT64) AS average_view_duration_seconds,
 CAST(averageViewPercentage AS FLOAT64) AS average_view_duration_percentage
 FROM
- `gds-social-data.govuk_youtube_channel_staging.user_activity`
-WHERE day BETWEEN "2025-12-01" AND "2026-02-28"
+ ${ref("raw_user_activity")}
+  ${ when(incremental(), `
+    AND date = (
+      SELECT MAX(src.date)
+      FROM ${ref("raw_user_activity")} src
+      WHERE src.date NOT IN (SELECT DISTINCT date FROM ${self()})
+    )
+  `) }

@@ -1,7 +1,13 @@
 
 -- A table that contains the processed data transfer table channel_basic information
 config {
-  type: "table",
+ type: "incremental",
+  tags: ["staging"],
+  uniqueKey: ["date", "channel_id", "video_id", "live_or_on_demand", "subscribed_status", "country_code"],
+  bigquery: {
+    partitionBy: "date",
+    updatePartitionFilter: "date >= DATE_SUB(CURRENT_DATE(), INTERVAL 120 DAY)"
+  },
   assertions : {
     uniqueKey: ["date","channel_id", "video_id", "live_or_on_demand","subscribed_status","country_code"],
     nonNull: ["date","channel_id","live_or_on_demand","subscribed_status","country_code"], // video_id can return null for about 50 videos all on 20251213
