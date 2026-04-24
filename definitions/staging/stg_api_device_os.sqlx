@@ -22,7 +22,7 @@ config {
 }
 
 SELECT
-  CAST(day AS DATE)                          AS date,
+  date,
   video_id,
   deviceType                                 AS device_type_name,
   operatingSystem                            AS operating_system_name,

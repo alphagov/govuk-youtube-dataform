@@ -3,14 +3,14 @@
 config {
   type: "view",
   assertions : {
-    uniqueKey: ["video_id","day", "deviceType", "operatingSystem"],
-    nonNull: ["video_id","day", "deviceType", "operatingSystem"],
+    uniqueKey: ["video_id","date", "deviceType", "operatingSystem"],
+    nonNull: ["video_id","date", "deviceType", "operatingSystem"],
     rowConditions: [
     ]
   },
   columns: {
     video_id: "the video id",
-    day: "YYYY-MM-DD date of data",
+    date: "YYYY-MM-DD date of data",
     deviceType: "device type, TV, tablet, modbile, desktop",
     operatingSystem: "Operating system of device, Amazon_fireOS, Andforid, Chrome_Os, IOS, Machintosh etc",
     engagedViews: "engaged Views where a user has seen the thumbnail/port of the video autoplaying via thumbnail",
@@ -21,7 +21,7 @@ config {
 
 SELECT 
     video_id,
-    day,
+    CAST(day AS DATE) AS date,
     deviceType,
     operatingSystem,
     engagedViews,

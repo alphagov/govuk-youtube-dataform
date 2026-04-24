@@ -3,14 +3,14 @@
 config {
   type: "view",
   assertions : {
-    uniqueKey: ["video_id","day","insightPlaybackLocationType", "creatorContentType"],
-    nonNull: ["video_id","day","insightPlaybackLocationType", "creatorContentType","engagedViews", "views", "estimatedMinutesWatched"],
+    uniqueKey: ["video_id","date","insightPlaybackLocationType", "creatorContentType"],
+    nonNull: ["video_id","date","insightPlaybackLocationType", "creatorContentType","engagedViews", "views", "estimatedMinutesWatched"],
     rowConditions: [
     ]
   },
   columns: {
     video_id: "the video id",
-    day: "YYYY-MM-DD date of data",
+    date: "YYYY-MM-DD date of data",
     insightPlaybackLocationType: "Where the video was viewed e.g. embedded, shorts-feed, WATCh (youtube)",
     creatorContentType: " content type, [shorts, VideoONDemand, liveStream]",
     views: "views where the user watches a portion of the video",
@@ -21,7 +21,7 @@ config {
 
 SELECT 
     video_id,
-    day,
+    CAST(day AS DATE) AS date,
     insightPlaybackLocationType,
     creatorContentType,
     views,
