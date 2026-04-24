@@ -1,0 +1,19 @@
+config {
+    type: "view",
+    columns: {
+        video_id: "video id identifier",
+        month: "The month the data covers ",
+        ageGroup: "Age group dimension",
+        gender: "The gender dimension",
+        viewerPercentage: " Percentage of dimension of total video views"
+    }
+}
+
+SELECT
+  CAST(video_id AS STRING) AS video_id,
+  CAST(MONTH AS DATE) AS month,
+  CAST(ageGroup AS STRING) AS ageGroup,
+  CAST(gender AS STRING) AS gender,
+  CAST(viewerPercentage AS FLOAT64) AS viewerPercentage
+FROM
+  `gds-social-data.govuk_youtube_channel_staging.viewer_demographic`
