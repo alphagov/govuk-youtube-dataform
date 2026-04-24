@@ -11,9 +11,9 @@ config {
 }
 
 SELECT 
-    video_id,
-    month.
-    sharingService,
-    shares
+    CAST(video_id AS STRING) AS video_id,
+    CAST(MONTH AS DATE) AS month,
+    CAST(sharingService AS STRING) AS sharingService,
+    CAST(shares AS INT) AS shares
 FROM
  `gds-social-data.govuk_youtube_channel_staging.engagement_and_content_location`
