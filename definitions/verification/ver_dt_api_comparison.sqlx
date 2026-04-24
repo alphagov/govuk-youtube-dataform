@@ -18,7 +18,7 @@ WITH dt AS (
 ),
 api AS (
   SELECT
-    day                          AS date,
+    date,
     video_id,
     views                        AS api_views,
     engagedViews                 AS api_engaged_views,

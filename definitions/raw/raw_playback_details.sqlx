@@ -24,7 +24,7 @@ config {
 
 SELECT 
     CAST(video_id AS STRING) AS video_id,
-    day as date,
+    CAST(day AS DATE) as date,
     CAST(creatorContentType AS STRING) AS creatorContentType,
     CAST(views AS INT) AS views,
     CAST(engagedViews AS INT) AS engagedViews,

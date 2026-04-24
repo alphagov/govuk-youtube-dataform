@@ -33,7 +33,7 @@ type: "incremental",
 
 SELECT 
 CAST(video_id AS STRING) AS video_id,
-CAST(day AS DATE) AS date,
+CAST(date AS DATE) AS date,
 CAST(engagedViews AS INT) AS engaged_views,
 CAST(views AS INT) AS views,
 CAST(redViews AS INT) AS red_views,

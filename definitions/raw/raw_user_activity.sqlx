@@ -3,14 +3,14 @@
 config {
   type: "view",
   assertions : {
-    uniqueKey: ["video_id","day"],
-    nonNull: ["video_id","day","engagedViews","views","redViews","comments","likes","dislikes","shares","estimatedMinutesWatched","estimatedRedMinutesWatched","averageViewDuration","averageViewPercentage"],
+    uniqueKey: ["video_id","date"],
+    nonNull: ["video_id","date","engagedViews","views","redViews","comments","likes","dislikes","shares","estimatedMinutesWatched","estimatedRedMinutesWatched","averageViewDuration","averageViewPercentage"],
     rowConditions: [
     ]
   },
   columns: {
     video_id: "the video id",
-    day: "YYYY-MM-DD date of data",
+    date: "YYYY-MM-DD date of data",
     engagedViews: "The number of times the channel's videos have been viewed past the initial seconds.",
     views: "This metric represents different numbers in different types of reports. This is a core metric and is subject to the Deprecation Policy.",
     redViews: "The number of times that a video was viewed by YouTube Premium (previously known as YouTube Red) members.",
@@ -27,7 +27,7 @@ config {
 
 SELECT 
 CAST(video_id AS STRING) AS video_id,
-CAST(day AS DATE) AS day,
+CAST(day AS DATE) AS date,
 CAST(engagedViews AS INT) AS engagedViews,
 CAST(views AS INT) AS views,
 CAST(redViews AS INT) AS redViews,

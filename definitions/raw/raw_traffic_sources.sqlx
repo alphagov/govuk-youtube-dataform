@@ -3,14 +3,14 @@
 config {
   type: "view",
   assertions : {
-    uniqueKey: ["video_id","day","insightTrafficSourceType", "creatorContentType"],
-    nonNull: ["video_id","day","insightTrafficSourceType", "creatorContentType","engagedViews", "views", "estimatedMinutesWatched"],
+    uniqueKey: ["video_id","date","insightTrafficSourceType", "creatorContentType"],
+    nonNull: ["video_id","date","insightTrafficSourceType", "creatorContentType","engagedViews", "views", "estimatedMinutesWatched"],
     rowConditions: [
     ]
   },
   columns: {
     video_id: "the video id",
-    day: "YYYY-MM-DD date of data",
+    date: "YYYY-MM-DD date of data",
     insightTrafficSourceType: "How a user landed on the youtube video",
     creatorContentType: " content type, [shorts, VideoONDemand, liveStream]",
     views: "views where the user watches a portion of the video",
@@ -21,7 +21,7 @@ config {
 
 SELECT 
     video_id,
-    CAST(day AS date) AS date,
+    CAST(day AS DATE) as date,
     insightTrafficSourceType,
     creatorContentType,
     views,
