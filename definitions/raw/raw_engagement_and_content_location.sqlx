@@ -4,6 +4,7 @@ config {
   type: "view",
   columns: {
     video_id: "video id identifier",
+    month: "The month the data covers ",
     sharingService: "The video sharing service",
     shares: "The number of times a video has been shared"
   }
@@ -11,6 +12,7 @@ config {
 
 SELECT 
     video_id,
+    month.
     sharingService,
     shares
 FROM
