@@ -40,5 +40,5 @@ CAST(estimatedRedMinutesWatched AS FLOAT64) AS red_watch_time_minutes,
 CAST(averageViewDuration AS FLOAT64) AS average_view_duration_seconds,
 CAST(averageViewPercentage AS FLOAT64) AS average_view_duration_percentage
 FROM
- `gds-social-data.govuk_youtube_channel_staging.user_activity`
-WHERE day BETWEEN "2025-12-01" AND "2026-02-28"
+ ${ref("raw_user_activity")}
+WHERE date BETWEEN "2025-12-01" AND "2026-02-28"
