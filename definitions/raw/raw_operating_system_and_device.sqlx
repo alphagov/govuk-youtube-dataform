@@ -20,12 +20,12 @@ config {
 }
 
 SELECT 
-    video_id,
+    CAST(video_id AS STRING) AS video_id,
     CAST(day AS DATE) AS date,
-    deviceType,
-    operatingSystem,
-    engagedViews,
-    views,
-    estimatedMinutesWatched
+    CAST(deviceType AS STRING) AS deviceType,
+    CAST(operatingSystem AS STRING) AS operatingSystem,
+    CAST(engagedViews AS INT) as engagedViews,
+    CAST(views AS INT) AS views,
+    CAST(estimatedMinutesWatched AS FLOAT64) AS estimatedMinutesWatched
 FROM
  `gds-social-data.govuk_youtube_channel_staging.operating_system_and_device`
