@@ -6,6 +6,7 @@
 -- A lookup_traffic_source_type table will be needed to harmonise these in fact models.
 config {
   type: "table",
+  tags: ["staging"],
   assertions: {
     uniqueKey: ["date", "video_id", "traffic_source_type_name", "content_type"],
     nonNull: ["date", "video_id", "traffic_source_type_name", "content_type", "views", "engaged_views", "watch_time_minutes"],

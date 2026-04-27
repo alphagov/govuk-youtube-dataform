@@ -2,6 +2,7 @@
 -- A table that contains the data transfer table operating system and device
 config {
   type: "view",
+  tags: ["raw"],
   assertions : {
     uniqueKey: ["date","channel_id", "video_id", "live_or_on_demand","subscribed_status","country_code","device_type","operating_system"],
     nonNull: ["date","channel_id", "video_id", "live_or_on_demand","subscribed_status","country_code","device_type","operating_system",

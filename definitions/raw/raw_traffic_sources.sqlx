@@ -2,6 +2,7 @@
 -- A table that contains the yearly output for traffic sources
 config {
   type: "view",
+  tags: ["raw"],
   assertions : {
     uniqueKey: ["video_id","date","insightTrafficSourceType", "creatorContentType"],
     nonNull: ["video_id","date","insightTrafficSourceType", "creatorContentType","engagedViews", "views", "estimatedMinutesWatched"],

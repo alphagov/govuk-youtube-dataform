@@ -2,6 +2,7 @@
 -- A table that contains the yearly output for engagement and content rpport data
 config {
   type: "view",
+  tags: ["raw"],
   assertions : {
     uniqueKey: ["video_id","date", "deviceType", "operatingSystem"],
     nonNull: ["video_id","date", "deviceType", "operatingSystem"],
