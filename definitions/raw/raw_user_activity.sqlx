@@ -42,4 +42,7 @@ CAST(averageViewDuration AS FLOAT64) AS averageViewDuration,
 CAST(averageViewPercentage AS FLOAT64) AS averageViewPercentage
 FROM
  `gds-social-data.govuk_youtube_channel_staging.user_activity`
+<<<<<<< HEAD
    WHERE day < '2025-12-01'
+=======
+>>>>>>> caf2c6c ( Up untill now I have been using a smaller subset of data to reduce costs, hence only selecting Data Transer data between 2025-01-01 and 2026-03-01, however going forward I want to seelct all data after 2025-12-01 for Data transfer tables)
