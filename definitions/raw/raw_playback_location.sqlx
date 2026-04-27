@@ -2,6 +2,7 @@
 -- A table that contains the yearly output for playback location
 config {
   type: "view",
+  tags: ["raw"],
   assertions : {
     uniqueKey: ["video_id","date","insightPlaybackLocationType", "creatorContentType"],
     nonNull: ["video_id","date","insightPlaybackLocationType", "creatorContentType","engagedViews", "views", "estimatedMinutesWatched"],
