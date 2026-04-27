@@ -20,12 +20,12 @@ config {
 }
 
 SELECT 
-    video_id,
-    CAST(day AS DATE) as date,
-    insightTrafficSourceType,
-    creatorContentType,
-    views,
-    engagedViews,
-    estimatedMinutesWatched
+    CAST(video_id AS STRING) AS video_id,
+    CAST(day AS DATE) AS date,
+    CAST(insightTrafficSourceType AS STRING) AS insightTrafficSourceType,
+    CAST(creatorContentType AS STRING) AS creatorContentType,
+    CAST(views AS INT) AS views,
+    CAST(engagedViews AS INT) AS engagedViews,
+    CAST(estimatedMinutesWatched AS FLOAT64) AS estimatedMinutesWatched
 FROM
  `gds-social-data.govuk_youtube_channel_staging.traffic_sources`
