@@ -2,6 +2,7 @@
 -- A table that contains the yearly output for engagement and content rpport data
 config {
   type: "view",
+  tags: ["raw"],
   columns: {
     video_id: "video id identifier",
     month: "The month the data covers ",

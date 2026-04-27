@@ -2,6 +2,7 @@
 -- A table that contains the data transfer table channel_basic information
 config {
   type: "view",
+  tags: ["raw"],
   assertions : {
     uniqueKey: ["date","channel_id", "video_id", "live_or_on_demand","subscribed_status","country_code"],
     nonNull: ["date","channel_id","live_or_on_demand","subscribed_status","country_code"], // video_id can return null for about 50 videos all on 20251213

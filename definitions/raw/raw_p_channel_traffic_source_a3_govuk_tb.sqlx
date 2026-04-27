@@ -2,6 +2,7 @@
 -- A table that contains the data transfer table containing traffic source information
 config {
   type: "view",
+  tags: ["raw"],
   assertions : {
     uniqueKey: ["date","channel_id", "video_id", "live_or_on_demand","subscribed_status","country_code","traffic_source_type","traffic_source_detail"],
     nonNull: ["date","channel_id", "video_id", "live_or_on_demand","subscribed_status","country_code","traffic_source_type","views","engaged_views","watch_time_minutes","average_view_duration_seconds", "average_view_duration_percentage","red_views","red_watch_time_minutes"], //traffic_source_detials can return null

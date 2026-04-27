@@ -2,6 +2,7 @@
 -- A table that contains the data for user_activity
 config {
   type: "table",
+  tags: ["staging"],
   assertions : {
     uniqueKey: ["video_id","date"],
     nonNull: ["video_id","date","engaged_views","views","red_Views","comments","likes","dislikes","shares","watch_time_minutes","red_watch_time_minutes","average_view_duration_seconds","average_view_duration_percentage"],
