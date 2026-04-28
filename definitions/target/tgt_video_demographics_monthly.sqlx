@@ -1,0 +1,48 @@
+-- Monthly demographic breakdown fact model, stitching API historical with ongoing DT data.
+-- API is authoritative for pre-Dec 2025; DT is authoritative from Dec 2025 onwards.
+-- The API reports at month grain natively. DT rows are aggregated from daily date to month
+-- by averaging views_percentage across country_code, subscribed_status, and live_or_on_demand.
+-- Note: averaging views_percentage is an approximation. For weighted accuracy,
+-- join to tgt_video_performance_monthly and weight by total views.
+-- Note: API demographics were unavailable from 16/03/2026 onwards due to an outage (issue: 488961396).
+config {
+  type: "table",
+  assertions: {
+    uniqueKey: ["video_id", "month", "age_group", "gender"],
+    nonNull: ["video_id", "month", "age_group", "gender", "data_source"]
+  },
+  columns: {
+    video_id: "The UUID for the video",
+    month: "First day of the month the data covers (YYYY-MM-01)",
+    data_source: "Origin of the row: 'api' (pre-Dec 2025) or 'dt' (Dec 2025 onwards)",
+    age_group: "Age group of the logged-in viewers",
+    gender: "Gender of the logged-in viewers",
+    views_percentage: "Approximate percentage of views attributed to this age/gender group"
+  }
+}
+
+-- Historical: API only (pre-Dec 2025)
+SELECT
+  video_id,
+  MONTH                                   AS month,
+  'api'                                   AS data_source,
+  ageGroup                                AS age_group,
+  gender,
+  viewerPercentage                        AS views_percentage
+FROM ${ref("raw_demographic_information")}
+WHERE MONTH < '2025-12-01'
+
+UNION ALL
+
+-- Ongoing: DT (Dec 2025 onwards), aggregated from daily to month grain
+SELECT
+  video_id,
+  DATE_TRUNC(PARSE_DATE('%Y%m%d', date), MONTH) AS month,
+  'dt'                                    AS data_source,
+  age_group,
+  gender,
+  AVG(views_percentage)                   AS views_percentage
+FROM ${ref("raw_p_channel_demographics_a1_govuk_tb")}
+WHERE PARSE_DATE('%Y%m%d', date) >= '2025-12-01'
+  AND video_id IS NOT NULL
+GROUP BY video_id, month, age_group, gender
