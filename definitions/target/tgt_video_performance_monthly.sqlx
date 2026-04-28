@@ -1,0 +1,98 @@
+-- Core monthly performance fact model, stitching API historical with ongoing DT data.
+-- API is authoritative for pre-Dec 2025; DT is authoritative from Dec 2025 onwards
+-- (including the overlap window). Uses the same source staging tables as
+-- tgt_video_performance_daily, aggregated to (video_id, month) grain.
+-- All additive metrics are summed. average_view_duration columns are NULL for DT rows
+-- as they cannot be reliably aggregated across sub-dimensions or across days within a month.
+config {
+  type: "table",
+  assertions: {
+    uniqueKey: ["video_id", "month"],
+    nonNull: ["video_id", "month", "data_source", "views"]
+  },
+  columns: {
+    video_id: "The UUID for the video",
+    month: "First day of the month the data covers (YYYY-MM-01)",
+    video_title: "Title of the video from lookup (may be NULL if unmapped)",
+    data_source: "Origin of the row: 'api' (pre-Dec 2025) or 'dt' (Dec 2025 onwards)",
+    views: "Total views in the month",
+    engaged_views: "Total engaged views in the month",
+    watch_time_minutes: "Total estimated minutes watched in the month",
+    comments: "Total comments in the month",
+    likes: "Total likes in the month",
+    dislikes: "Total dislikes in the month",
+    shares: "Total shares in the month",
+    red_views: "Total YouTube Premium views in the month",
+    red_watch_time_minutes: "Total minutes watched by YouTube Premium members in the month",
+    average_view_duration_seconds: "Monthly average view duration in seconds (API only; NULL for DT rows)",
+    average_view_duration_percentage: "Monthly average percentage of video watched (API only; NULL for DT rows)"
+  }
+}
+
+WITH union_sources AS (
+
+  -- Historical: API only (pre-Dec 2025), aggregated to month grain
+  SELECT
+    DATE_TRUNC(api.date, MONTH)             AS month,
+    api.video_id,
+    lv.video_title,
+    'api'                                   AS data_source,
+    SUM(api.views)                          AS views,
+    SUM(api.engaged_views)                  AS engaged_views,
+    SUM(api.watch_time_minutes)             AS watch_time_minutes,
+    SUM(api.comments)                       AS comments,
+    SUM(api.likes)                          AS likes,
+    SUM(api.dislikes)                       AS dislikes,
+    SUM(api.shares)                         AS shares,
+    SUM(api.red_views)                      AS red_views,
+    SUM(api.red_watch_time_minutes)         AS red_watch_time_minutes,
+    AVG(api.average_view_duration_seconds)  AS average_view_duration_seconds,
+    AVG(api.average_view_duration_percentage) AS average_view_duration_percentage
+  FROM ${ref("stg_api_user_activity")} api
+  LEFT JOIN ${ref("lookup_video_id_title_mapping")} lv USING (video_id)
+  WHERE api.date < '2025-12-01'
+  GROUP BY month, api.video_id, lv.video_title
+
+  UNION ALL
+
+  -- Ongoing: DT (Dec 2025 onwards), aggregated from full DT sub-dimensions to month grain
+  SELECT
+    DATE_TRUNC(dt.date, MONTH)              AS month,
+    dt.video_id,
+    lv.video_title,
+    'dt'                                    AS data_source,
+    SUM(dt.views)                           AS views,
+    SUM(dt.engaged_views)                   AS engaged_views,
+    SUM(dt.watch_time_minutes)              AS watch_time_minutes,
+    SUM(dt.comments)                        AS comments,
+    SUM(dt.likes)                           AS likes,
+    SUM(dt.dislikes)                        AS dislikes,
+    SUM(dt.shares)                          AS shares,
+    SUM(dt.red_views)                       AS red_views,
+    SUM(dt.red_watch_time_minutes)          AS red_watch_time_minutes,
+    NULL                                    AS average_view_duration_seconds,
+    NULL                                    AS average_view_duration_percentage
+  FROM ${ref("stg_dt_channel_basic")} dt
+  LEFT JOIN ${ref("lookup_video_id_title_mapping")} lv USING (video_id)
+  WHERE dt.date >= '2025-12-01'
+  GROUP BY month, dt.video_id, lv.video_title
+
+)
+
+SELECT
+  month,
+  video_id,
+  video_title,
+  data_source,
+  views,
+  engaged_views,
+  watch_time_minutes,
+  comments,
+  likes,
+  dislikes,
+  shares,
+  red_views,
+  red_watch_time_minutes,
+  average_view_duration_seconds,
+  average_view_duration_percentage
+FROM union_sources
