@@ -10,6 +10,7 @@
 -- coverage to all ongoing DT data.
 config {
   type: "incremental",
+  dependencies: ["raw_p_channel_device_os_a3_govuk_tb", "lookup_device_type_mapping", "lookup_operating_system"],
   tags: ["staging"],
   uniqueKey: ["date", "video_id", "device_type_name", "operating_system_name", "live_or_on_demand", "subscribed_status", "country_code"],
   bigquery: {

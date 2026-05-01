@@ -8,6 +8,7 @@
 -- coverage to all ongoing DT data.
 config {
   type: "incremental",
+  dependencies: ["raw_p_channel_traffic_source_a3_govuk_tb"],
   tags: ["staging"],
   uniqueKey: ["date", "video_id", "traffic_source_type", "traffic_source_detail", "live_or_on_demand", "subscribed_status", "country_code"],
   bigquery: {

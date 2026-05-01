@@ -1,5 +1,6 @@
 config {
-  type: "view"
+  type: "view",
+  dependencies: ["stg_dt_channel_basic", "raw_user_activity"]
 }
 
 WITH dt AS (

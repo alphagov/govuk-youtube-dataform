@@ -8,6 +8,7 @@
 -- DT rows are aggregated to (date, video_id, traffic_source_type) grain.
 config {
   type: "table",
+  dependencies: ["stg_api_traffic_sources", "stg_dt_traffic_sources", "lookup_traffic_source_type_mapping"],
   assertions: {
     uniqueKey: ["date", "video_id", "traffic_source_type_name"],
     nonNull: ["date", "video_id", "traffic_source_type_name", "data_source", "views"]

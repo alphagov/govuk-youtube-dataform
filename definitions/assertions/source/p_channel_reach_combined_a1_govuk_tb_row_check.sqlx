@@ -1,5 +1,6 @@
 config {
   type: "assertion",
+  dependencies: ["raw_p_channel_reach_combined_a1_govuk_tb"],
   description: "Fails if the target table is empty"
 }
 

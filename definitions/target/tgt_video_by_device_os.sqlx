@@ -6,6 +6,7 @@
 -- by summing over live_or_on_demand, subscribed_status, and country_code.
 config {
   type: "table",
+  dependencies: ["stg_api_device_os", "stg_dt_device_os"],
   assertions: {
     uniqueKey: ["date", "video_id", "device_type_name", "operating_system_name"],
     nonNull: ["date", "video_id", "device_type_name", "operating_system_name", "data_source", "views"]

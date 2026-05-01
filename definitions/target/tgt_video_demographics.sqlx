@@ -8,6 +8,7 @@
 -- join to fct_video_performance_daily and weight by total views.
 config {
   type: "table",
+  dependencies: ["raw_p_channel_demographics_a1_govuk_tb"],
   assertions: {
     uniqueKey: ["date", "video_id", "age_group", "gender"],
     nonNull: ["date", "video_id", "age_group", "gender", "data_source"]

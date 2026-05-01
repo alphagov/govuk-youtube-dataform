@@ -5,6 +5,7 @@
 -- live_or_on_demand and subscribed_status sub-dimensions.
 config {
   type: "table",
+  dependencies: ["stg_dt_channel_basic", "lookup_country_code_mapping"],
   assertions: {
     uniqueKey: ["date", "video_id", "country_code"],
     nonNull: ["date", "video_id", "country_code", "data_source", "views"]

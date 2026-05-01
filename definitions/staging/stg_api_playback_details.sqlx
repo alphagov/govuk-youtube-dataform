@@ -5,6 +5,7 @@
 -- Note: 'shorts' is only present in this API source; DT only captures LIVE/ON_DEMAND.
 config {
 type: "incremental",
+  dependencies: ["raw_playback_details"],
   bigquery: {
     partitionBy: "date",
     updatePartitionFilter: "date >= DATE_SUB(CURRENT_DATE(), INTERVAL 120 DAY)"

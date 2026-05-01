@@ -6,6 +6,7 @@
 -- aggregated across sub-dimensions.
 config {
   type: "table",
+  dependencies: ["stg_api_user_activity", "lookup_video_id_title_mapping", "stg_dt_channel_basic", "raw_video_id_metadata_mapping"],
   assertions: {
     uniqueKey: ["date", "video_id"],
     nonNull: ["date", "video_id", "data_source", "views"]

@@ -2,6 +2,7 @@
 -- A table that contains the data for user_activity
 config {
 type: "incremental",
+  dependencies: ["raw_user_activity"],
   bigquery: {
     partitionBy: "date",
     updatePartitionFilter: "date >= DATE_SUB(CURRENT_DATE(), INTERVAL 120 DAY)"

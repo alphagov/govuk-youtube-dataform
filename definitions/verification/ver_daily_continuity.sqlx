@@ -4,7 +4,8 @@
 -- Expected result: a complete daily series with no missing dates in either source's window,
 -- and no dramatic discontinuity in video_count or total_views at the boundary.
 config {
-  type: "view"
+  type: "view",
+  dependencies: ["tgt_video_performance_daily"]
 }
 
 SELECT

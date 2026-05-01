@@ -2,6 +2,7 @@
 -- A table that contains the processed data transfer table channel_basic information
 config {
  type: "incremental",
+  dependencies: ["raw_p_channel_basic_a3_govuk_tb"],
   tags: ["staging"],
   uniqueKey: ["date", "channel_id", "video_id", "live_or_on_demand", "subscribed_status", "country_code"],
   bigquery: {

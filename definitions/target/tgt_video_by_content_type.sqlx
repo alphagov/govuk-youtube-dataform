@@ -8,6 +8,7 @@
 -- aggregated across sub-dimensions.
 config {
   type: "table",
+  dependencies: ["stg_api_playback_details", "lookup_content_type", "stg_dt_channel_basic"],
   assertions: {
     uniqueKey: ["date", "video_id", "content_type"],
     nonNull: ["date", "video_id", "content_type", "data_source", "views"]

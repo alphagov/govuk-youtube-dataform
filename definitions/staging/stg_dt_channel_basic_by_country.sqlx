@@ -2,6 +2,7 @@
 -- A table that contains the processed data transfer table channel_basic information
 config {
   type: "incremental",
+  dependencies: ["raw_p_channel_basic_a3_govuk_tb"],
   tags: ["staging"],
   bigquery: {
     partitionBy: "date",

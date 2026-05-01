@@ -7,6 +7,7 @@
 -- these in fact models.
 config {
 type: "incremental",
+  dependencies: ["raw_playback_location"],
   bigquery: {
     partitionBy: "date",
     updatePartitionFilter: "date >= DATE_SUB(CURRENT_DATE(), INTERVAL 120 DAY)"

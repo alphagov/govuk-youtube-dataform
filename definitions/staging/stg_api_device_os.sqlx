@@ -5,6 +5,7 @@
 -- so they can be joined directly in fact models.
 config {
   type: "incremental",
+  dependencies: ["raw_operating_system_and_device"],
   tags: ["staging"],
   bigquery: {
     partitionBy: "date",

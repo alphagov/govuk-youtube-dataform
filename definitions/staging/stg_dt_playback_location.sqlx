@@ -4,6 +4,7 @@
 
 config {
   type: "incremental",
+  dependencies: ["raw_p_channel_playback_location_a3_govuk_tb"],
   tags: ["staging"],
   uniqueKey: ["date", "video_id", "playback_location_type", "playback_location_detail", "live_or_on_demand", "subscribed_status", "country_code"],
   bigquery: {

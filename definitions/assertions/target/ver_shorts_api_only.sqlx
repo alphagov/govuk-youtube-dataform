@@ -4,6 +4,7 @@
 -- Expected result: empty — any returned rows indicate a SHORTS contamination in DT rows.
 config {
   type: "assertion",
+  dependencies: ["tgt_video_by_content_type"],
   description: "Fails if any rows are returned"
 }
 
