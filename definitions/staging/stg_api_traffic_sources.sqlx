@@ -28,7 +28,7 @@ type: "incremental",
 }
 
 SELECT
-  CAST(day AS DATE)                          AS date,
+  date,
   video_id,
   insightTrafficSourceType                   AS traffic_source_type_name,
   creatorContentType                         AS content_type,

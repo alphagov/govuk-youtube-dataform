@@ -21,7 +21,7 @@ config {
 
 SELECT 
     video_id,
-    day,
+    CAST(day AS date) AS date,
     insightTrafficSourceType,
     creatorContentType,
     views,
