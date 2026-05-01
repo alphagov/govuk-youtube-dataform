@@ -41,4 +41,3 @@ CAST(averageViewDuration AS FLOAT64) AS averageViewDuration,
 CAST(averageViewPercentage AS FLOAT64) AS averageViewPercentage
 FROM
  `gds-social-data.govuk_youtube_channel_staging.user_activity`
--- WHERE day BETWEEN "2025-12-01" AND "2026-02-28"

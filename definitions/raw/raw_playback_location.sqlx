@@ -20,7 +20,6 @@ config {
 }
 
 SELECT 
-<<<<<<< HEAD
     CAST(video_id AS STRING) AS video_id,
     CAST(day AS DATE) AS date,
     CAST(insightPlaybackLocationType AS STRING) AS insightPlaybackLocationType,
@@ -28,14 +27,5 @@ SELECT
     CAST(views AS INT) AS views,
     CAST(engagedViews AS INT) AS engagedViews,
     CAST(estimatedMinutesWatched AS FLOAT64) AS estimatedMinutesWatched
-=======
-    video_id,
-    CAST(day AS DATE) AS date,
-    insightPlaybackLocationType,
-    creatorContentType,
-    views,
-    engagedViews,
-    estimatedMinutesWatched
->>>>>>> b78d105 (Renamed day to date for all API sources, as this matches the naming used in the data transfer service that we will be using going forward)
 FROM
  `gds-social-data.govuk_youtube_channel_staging.playback_location`

@@ -20,7 +20,6 @@ config {
 }
 
 SELECT 
-<<<<<<< HEAD
     CAST(video_id AS STRING) AS video_id,
     CAST(day AS DATE) AS date,
     CAST(deviceType AS STRING) AS deviceType,
@@ -28,14 +27,5 @@ SELECT
     CAST(engagedViews AS INT) as engagedViews,
     CAST(views AS INT) AS views,
     CAST(estimatedMinutesWatched AS FLOAT64) AS estimatedMinutesWatched
-=======
-    video_id,
-    CAST(day AS DATE) AS date,
-    deviceType,
-    operatingSystem,
-    engagedViews,
-    views,
-    estimatedMinutesWatched
->>>>>>> b78d105 (Renamed day to date for all API sources, as this matches the naming used in the data transfer service that we will be using going forward)
 FROM
  `gds-social-data.govuk_youtube_channel_staging.operating_system_and_device`
