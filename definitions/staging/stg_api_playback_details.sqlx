@@ -44,7 +44,7 @@ FROM ${ref("raw_playback_details")}
   ${ when(incremental(), `
     WHERE date = (
       SELECT MAX(src.date)
-      FROM ${ref("raw_p_channel_basic_a3_govuk_tb")} src
+      FROM ${ref("raw_playback_details")} src
       WHERE src.date NOT IN (SELECT DISTINCT date FROM ${self()})
     )
   `) }
