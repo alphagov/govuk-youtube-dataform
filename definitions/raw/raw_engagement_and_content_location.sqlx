@@ -2,16 +2,19 @@
 -- A table that contains the yearly output for engagement and content rpport data
 config {
   type: "view",
+  tags: ["raw"],
   columns: {
     video_id: "video id identifier",
+    month: "The month the data covers ",
     sharingService: "The video sharing service",
     shares: "The number of times a video has been shared"
   }
 }
 
 SELECT 
-    video_id,
-    sharingService,
-    shares
+    CAST(video_id AS STRING) AS video_id,
+    CAST(MONTH AS DATE) AS month,
+    CAST(sharingService AS STRING) AS sharingService,
+    CAST(shares AS INT) AS shares
 FROM
  `gds-social-data.govuk_youtube_channel_staging.engagement_and_content_location`
