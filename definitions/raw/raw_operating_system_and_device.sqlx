@@ -30,3 +30,4 @@ SELECT
     CAST(estimatedMinutesWatched AS FLOAT64) AS estimatedMinutesWatched
 FROM
  `gds-social-data.govuk_youtube_channel_staging.operating_system_and_device`
+WHERE day < '2025-12-01'
