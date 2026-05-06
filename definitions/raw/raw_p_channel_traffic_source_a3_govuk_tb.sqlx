@@ -30,7 +30,7 @@ config {
 }
 
 SELECT 
-    date,
+    PARSE_DATE('%Y%m%d', date) AS date,
     channel_id,
     video_id,
     live_or_on_demand,

@@ -33,7 +33,7 @@ config {
 }
 
 SELECT
-  PARSE_DATE('%Y%m%d', dt_device.date)           AS date,
+  dt_device.date,
   dt_device.video_id,
   dt_device.live_or_on_demand,
   dt_device.subscribed_status,

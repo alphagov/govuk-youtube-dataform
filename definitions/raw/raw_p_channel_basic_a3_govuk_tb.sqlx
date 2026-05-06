@@ -33,7 +33,7 @@ config {
 }
 
 SELECT 
-    PARSE_DATE('%Y%m%d', date) AS date,
+    CAST(date AS DATE) AS date,
     CAST(channel_id AS STRING) AS channel_id,
     CAST(video_id AS STRING) AS video_id, -- contains nulls 
     CAST(live_or_on_demand AS STRING) AS live_or_on_demand,

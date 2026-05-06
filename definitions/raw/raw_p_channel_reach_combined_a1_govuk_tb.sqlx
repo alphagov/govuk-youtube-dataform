@@ -22,7 +22,7 @@ config {
   -- gaps in data between 2026-01 = 2026-02
   -- A table that contains the data transfer table channel_combined information
 SELECT
-  date,
+  PARSE_DATE('%Y%m%d', date) AS date,
   channel_id,
   video_id,
   device_type,

@@ -27,7 +27,7 @@ config {
 }
 
 SELECT
-  PARSE_DATE('%Y%m%d', date)           AS date,
+  date,
   video_id,
   live_or_on_demand,
   subscribed_status,
