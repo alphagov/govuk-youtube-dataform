@@ -7,6 +7,7 @@
 -- these in fact models.
 config {
   type: "table",
+  tags: ["staging"],
   assertions: {
     uniqueKey: ["date", "video_id", "playback_location_type", "content_type"],
     nonNull: ["date", "video_id", "playback_location_type", "content_type", "views", "engaged_views", "watch_time_minutes"],
@@ -24,7 +25,7 @@ config {
 }
 
 SELECT
-  CAST(day AS DATE)                          AS date,
+  date,
   video_id,
   insightPlaybackLocationType                AS playback_location_type,
   creatorContentType                         AS content_type,
