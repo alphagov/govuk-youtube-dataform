@@ -11,12 +11,12 @@ const pChannelTables = [
 
 pChannelTables.forEach(tableName => {
   assert(`${tableName}_date_spine_check`)
-    .description(`Fails if any date between 2026-02-01 and two days ago is missing from ${tableName}`)
+    .description(`Fails if any date between 2026-01-01 and two days ago is missing from ${tableName}`)
     .query(ctx => `
       WITH date_spine AS (
         SELECT date
         FROM UNNEST(GENERATE_DATE_ARRAY(
-          DATE('2026-02-01'),
+          DATE('2026-01-01'),
           DATE_SUB(CURRENT_DATE(), INTERVAL 2 DAY)
         )) AS date
       ),
