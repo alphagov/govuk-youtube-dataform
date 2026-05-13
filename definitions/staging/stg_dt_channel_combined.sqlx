@@ -2,8 +2,8 @@
         type: "view",
         tags: ["raw"],
         assertions: {
-            uniqueKey: ["date", "channel_id", "video_id", "live_or_on_demand", "subscribed_status", "country_code","playback_location_type","traffic_source_type","device_type","operating_system"],
-            nonNull: ["date", "channel_id", "video_id", "live_or_on_demand", "subscribed_status", "country_code","playback_location_type","traffic_source_type","device_type","operating_system"],
+            uniqueKey: ["date", "channel_id", "video_id", "live_or_on_demand", "subscribed_status","playback_location_type","traffic_source_type","device_type","operating_system"],
+            nonNull: ["date", "channel_id", "video_id", "live_or_on_demand", "subscribed_status",,"playback_location_type","traffic_source_type","device_type","operating_system"],
             rowConditions: []
         },
         columns: {
@@ -34,16 +34,25 @@
 
         EXCEPT (country_code,
         views, engaged_views, watch_time_minutes, red_views,red_watch_time_minutes, 
-        average_view_duration_secods, average_view_duration_percantage),
-        SUM(views)                              OVER(PARITION BY country_code) as views
-        SUM(engaged_views)                      OVER(PARITION BY country_code) as engaged_views,
-        SUM(watch_time_minutes)                 OVER(PARITION BY country_code) as watch_time_minutes,
-        SUM(red_views)                          OVER(PARITION BY country_code) as red_views,
-        SUM(red_watch_time_minutes)             OVER(PARITION BY country_code) as red_watch_time_minutes,
-        AVG(average_view_duration_seconds)      OVER(PARITION BY country_code) as average_view_duration_seconds,
-        AVG(average_view_duration_percantage)   OVER(PARITION BY country_code) as average_view_duration_percantage,
+        average_view_duration_seconds, average_view_duration_percentage),
+        SUM(views)                              as views,
+        SUM(engaged_views)                      as engaged_views,
+        SUM(watch_time_minutes)                 as watch_time_minutes,
+        SUM(red_views)                          as red_views,
+        SUM(red_watch_time_minutes)             as red_watch_time_minutes,
+        AVG(average_view_duration_seconds)      as average_view_duration_seconds,
+        AVG(average_view_duration_percentage)   as average_view_duration_percentage
     
     FROM
     ${ref("raw_p_channel_combined_a3_govuk_tb")}
-    GROUP BY country_code
+    GROUP BY
+date,
+channel_id,
+video_id,
+live_or_on_demand,
+subscribed_status,
+playback_location_type,
+traffic_source_type,
+device_type,
+operating_system
 
