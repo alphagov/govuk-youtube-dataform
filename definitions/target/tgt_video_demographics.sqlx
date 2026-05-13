@@ -23,7 +23,7 @@ config {
 }
 
 SELECT
-  PARSE_DATE('%Y%m%d', date)             AS date,
+  date,
   video_id,
   'dt'                                   AS data_source,
   age_group,
@@ -31,5 +31,4 @@ SELECT
   AVG(views_percentage)                  AS views_percentage
 FROM ${ref("raw_p_channel_demographics_a1_govuk_tb")}
 WHERE video_id IS NOT NULL
-  AND date >= '20251201'
 GROUP BY date, video_id, age_group, gender

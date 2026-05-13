@@ -30,19 +30,17 @@ SELECT
   gender,
   viewerPercentage                        AS views_percentage
 FROM ${ref("raw_demographic_information")}
-WHERE MONTH < '2025-12-01'
 
 UNION ALL
 
 -- Ongoing: DT (Dec 2025 onwards), aggregated from daily to month grain
 SELECT
   video_id,
-  DATE_TRUNC(PARSE_DATE('%Y%m%d', date), MONTH) AS month,
+  DATE_TRUNC(date, MONTH) as month,
   'dt'                                    AS data_source,
   age_group,
   gender,
   AVG(views_percentage)                   AS views_percentage
 FROM ${ref("raw_p_channel_demographics_a1_govuk_tb")}
-WHERE PARSE_DATE('%Y%m%d', date) >= '2025-12-01'
-  AND video_id IS NOT NULL
-GROUP BY video_id, month, age_group, gender
+  WHERE video_id IS NOT NULL
+GROUP BY video_id, DATE_TRUNC(date, MONTH), age_group, gender
