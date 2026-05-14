@@ -1,8 +1,6 @@
 config {
-    type: "incremental", 
+    type: "incremental",
     uniqueKey: ["video_id"],
-    bigquery: {
-    },
     assertions: {
         uniqueKey: ["video_id", "long_short_format"],
         nonNull: ["video_id", "long_short_format"]
@@ -14,29 +12,39 @@ config {
 }
 
 WITH
-  get_video_ids_CTE AS (
+  -- Combine all potential sources and deduplicate them
+  all_source_ids AS (
     SELECT video_id FROM ${ref("raw_p_channel_basic_a3_govuk_tb")}
-    UNION ALL
+    UNION DISTINCT
     SELECT video_id FROM ${ref("raw_user_activity")}
-    UNION ALL
+    UNION DISTINCT
     SELECT video_id FROM ${ref("raw_video_id_metadata_mapping")}
   ),
-  
-  distinct_video_ids_CTE AS (
-    SELECT DISTINCT video_id FROM get_video_ids_CTE
+
+  -- Identify only the IDs we haven't processed yet
+  new_video_ids AS (
+    SELECT video_id FROM all_source_ids
+    ${when(incremental(), `
+      EXCEPT DISTINCT
+      SELECT video_id FROM ${self()}
+    `)}
   ),
 
-  -- Filter for new IDs only
-  new_video_ids AS (
+  -- Apply the expensive UDF only to the new IDs
+  short_long_cte AS (
     SELECT
-      video_id
+      video_id,
+      `gds-social-data.dataform_youtube_processing.bq_youtube_short_or_long`(video_id) AS long_short_format
     FROM
-      distinct_video_ids_CTE
-    ${when(incremental(), `WHERE video_id NOT IN (SELECT video_id FROM ${self()})`)}
+      new_video_ids
   )
 
+-- Final output with formatting logic
 SELECT
   video_id,
-  `gds-social-data.dataform_youtube_processing.bq_youtube_short_or_long`(video_id) AS long_short_format
+  CASE 
+    WHEN long_short_format IN ("Long", "Short") THEN long_short_format
+    ELSE "Unknown"
+  END AS long_short_format
 FROM
-  new_video_ids
+  short_long_cte
