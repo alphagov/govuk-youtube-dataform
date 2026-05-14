@@ -13,7 +13,7 @@ config {
    
     date: "YYYYMMDD date of data",
     channel_id: "the numeric code of the channel id",
-    video_id: "the UUID for the video",
+    video_id: "the UaUID for the video",
     live_or_on_demand: "if the video was stream lived or watched on demand",
     subscribed_status: "If the user activity for the video id is associated with subscribed users or non subscribed users",
     country_code: "The ISO country codde for the given country",

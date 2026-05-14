@@ -1,0 +1,50 @@
+config {
+    type: "incremental",
+    uniqueKey: ["video_id"],
+    assertions: {
+        uniqueKey: ["video_id", "long_short_format"],
+        nonNull: ["video_id", "long_short_format"]
+    },
+    columns: {
+        video_id: "the UUID for the video",
+        long_short_format: "returns long or short to define the video format"
+    }
+}
+
+WITH
+  -- Combine all potential sources and deduplicate them
+  all_source_ids AS (
+    SELECT video_id FROM ${ref("raw_p_channel_basic_a3_govuk_tb")}
+    UNION DISTINCT
+    SELECT video_id FROM ${ref("raw_user_activity")}
+    UNION DISTINCT
+    SELECT video_id FROM ${ref("raw_video_id_metadata_mapping")}
+  ),
+
+  -- Identify only the IDs we haven't processed yet
+  new_video_ids AS (
+    SELECT video_id FROM all_source_ids
+    ${when(incremental(), `
+      EXCEPT DISTINCT
+      SELECT video_id FROM ${self()}
+    `)}
+  ),
+
+  -- Apply the expensive UDF only to the new IDs
+  short_long_cte AS (
+    SELECT
+      video_id,
+      `gds-social-data.dataform_youtube_processing.bq_youtube_short_or_long`(video_id) AS long_short_format
+    FROM
+      new_video_ids
+  )
+
+-- Final output with formatting logic
+SELECT
+  video_id,
+  CASE 
+    WHEN long_short_format IN ("Long", "Short") THEN long_short_format
+    ELSE "Unknown"
+  END AS long_short_format
+FROM
+  short_long_cte
