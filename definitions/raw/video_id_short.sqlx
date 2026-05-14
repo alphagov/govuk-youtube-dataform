@@ -1,0 +1,42 @@
+config {
+    type: "incremental", 
+    uniqueKey: ["video_id"],
+    bigquery: {
+    },
+    assertions: {
+        uniqueKey: ["video_id", "long_short_format"],
+        nonNull: ["video_id", "long_short_format"]
+    },
+    columns: {
+        video_id: "the UUID for the video",
+        long_short_format: "returns long or short to define the video format"
+    }
+}
+
+WITH
+  get_video_ids_CTE AS (
+    SELECT video_id FROM ${ref("raw_p_channel_basic_a3_govuk_tb")}
+    UNION ALL
+    SELECT video_id FROM ${ref("raw_user_activity")}
+    UNION ALL
+    SELECT video_id FROM ${ref("raw_video_id_metadata_mapping")}
+  ),
+  
+  distinct_video_ids_CTE AS (
+    SELECT DISTINCT video_id FROM get_video_ids_CTE
+  ),
+
+  -- Filter for new IDs only
+  new_video_ids AS (
+    SELECT
+      video_id
+    FROM
+      distinct_video_ids_CTE
+    ${when(incremental(), `WHERE video_id NOT IN (SELECT video_id FROM ${self()})`)}
+  )
+
+SELECT
+  video_id,
+  `gds-social-data.dataform_youtube_processing.bq_youtube_short_or_long`(video_id) AS long_short_format
+FROM
+  new_video_ids
