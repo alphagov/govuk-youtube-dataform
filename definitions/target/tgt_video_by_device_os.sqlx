@@ -23,6 +23,7 @@ config {
 }
 
 -- Historical: API only (pre-Dec 2025)
+WITH UNION_CTE AS (
 SELECT
   api.date,
   api.video_id,
@@ -51,3 +52,18 @@ SELECT
 FROM ${ref("stg_dt_device_os")} dt
 WHERE dt.date >= '2025-12-01'
 GROUP BY dt.date, dt.video_id, dt.device_type_name, dt.operating_system_name
+)
+
+SELECT
+  date,
+  video_id,
+  short.long_short_format
+  data_source,
+  device_type_name,
+  operating_system_name,
+  views,
+  engaged_views,
+  watch_time_minutes
+FROM UNION_CTE
+LEFT JOIN ${ref("raw_video_id_short")} short
+using(video_id)

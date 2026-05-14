@@ -77,6 +77,7 @@ GROUP BY dt.date, dt.video_id, lv.video_title)
 SELECT 
 sources.date,
 sources.video_id,
+short.long_short_format,
 sources.video_title,
 sources.data_source,
 sources.views,
@@ -105,3 +106,5 @@ metadata.madeForKids,
 FROM UNION_SOURCES as sources 
 LEFT JOIN ${ref("raw_video_id_metadata_mapping")} as metadata
 using (video_id)
+LEFT JOIN ${ref("raw_video_id_short")} short
+using(video_id)
