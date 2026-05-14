@@ -1,0 +1,57 @@
+config {
+    type: "table",
+    tags: ["staging"],
+    assertions: {
+        uniqueKey: ["date", "type_short_long"],
+        nonNull: ["date", "type_short_long"]
+    },
+    columns: {
+        date: "YYYY-MM-DD date of data",
+        type_short_long: "If the video type is short or long"
+    }
+}
+
+WITH
+  API_SHORT_VIDEO_CTE AS (
+  SELECT
+    video_id,
+    insightPlaybackLocationType AS playback_location_type_name
+  FROM
+    ${ref("raw_playback_location")}),
+DT_SHORT_VIDEO_CTE AS (
+
+  SELECT
+    channel_playback_location.video_id,
+    lookup_playback_location.playback_location_type_name
+  FROM
+    ${ref("raw_p_channel_playback_location_a3_govuk_tb")} channel_playback_location
+    LEFT JOIN ${ref("lookup_playback_location_type")} lookup_playback_location
+        ON lookup_playback_location.playback_location_type_id = channel_playback_location.playback_location_type
+  ),
+  COMBINE_CTE AS (
+    SELECT video_id, playback_location_type_name FROM API_SHORT_VIDEO_CTE
+    UNION ALL
+    SELECT video_id, playback_location_type_name FROM DT_SHORT_VIDEO_CTE
+  ),
+  DISTINCT_VIDEO_ID_CTE AS (
+    SELECT DISTINCT (video_id)
+    FROM COMBINE_CTE
+  )
+  ,
+  DISTINCT_SHORT_VIDEO_CTE AS (
+    SELECT DISTINCT video_id,playback_location_type_name FROM COMBINE_CTE
+    WHERE playback_location_type_name = "SHORTS_FEED"
+  )
+ 
+SELECT 
+    video_ids.video_id, 
+    short_ids .playback_location_type_name,
+    fuction_short.long_short_format
+FROM DISTINCT_VIDEO_ID_CTE AS video_ids
+LEFT JOIN  DISTINCT_SHORT_VIDEO_CTE as short_ids 
+using(video_id)
+LEFT JOIN ${ref("raw_video_id_short")} fuction_short using(video_id)  -- Long, Short
+
+
+
+
