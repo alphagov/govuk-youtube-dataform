@@ -3,7 +3,7 @@
         tags: ["raw"],
         assertions: {
             uniqueKey: ["date", "channel_id", "video_id", "live_or_on_demand", "subscribed_status","playback_location_type","traffic_source_type","device_type","operating_system"],
-            nonNull: ["date", "channel_id", "video_id", "live_or_on_demand", "subscribed_status",,"playback_location_type","traffic_source_type","device_type","operating_system"],
+            nonNull: ["date", "channel_id", "video_id", "live_or_on_demand", "subscribed_status","playback_location_type","traffic_source_type","device_type","operating_system"],
             rowConditions: []
         },
         columns: {
@@ -29,8 +29,9 @@
     }
 
     -- A table that contains the data transfer table channel_combined information
+WITH DT_RAW_P_CHANNEL_COMBINED_GROUPED_CTE AS (
     SELECT
-    DISTINCT  *
+     *
 
         EXCEPT (country_code,
         views, engaged_views, watch_time_minutes, red_views,red_watch_time_minutes, 
@@ -43,16 +44,46 @@
         AVG(average_view_duration_seconds)      as average_view_duration_seconds,
         AVG(average_view_duration_percentage)   as average_view_duration_percentage
     
-    FROM
-    ${ref("raw_p_channel_combined_a3_govuk_tb")}
+    FROM ${ref("raw_p_channel_combined_a3_govuk_tb")}
     GROUP BY
-date,
-channel_id,
-video_id,
-live_or_on_demand,
-subscribed_status,
-playback_location_type,
-traffic_source_type,
-device_type,
-operating_system
+        date,
+        channel_id,
+        video_id,
+        live_or_on_demand,
+        subscribed_status,
+        playback_location_type,
+        traffic_source_type,
+        device_type,
+        operating_system
+),
+MAPPING_CTE AS (
+SELECT 
+combined.date,
+combined.channel_id,
+combined.video_id,
+combined.live_or_on_demand,
+combined.subscribed_status,
+lookup_pl.playback_location_type_name as playback_location,
+lookup_tst.traffic_source_type_name as traffic_source,
+lookup_dt.device_type_name as device_type,
+lookup_os.operating_system_name as operating_system,
+combined.views,
+combined.engaged_views,
+combined.watch_time_minutes,
+combined.red_views,
+combined.red_watch_time_minutes,
+combined.average_view_duration_seconds,
+combined.average_view_duration_percentage
+FROM DT_RAW_P_CHANNEL_COMBINED_GROUPED_CTE combined
+LEFT JOIN ${ref("lookup_playback_location_type")} lookup_pl on(lookup_pl.playback_location_type_id = combined.playback_location_type )
+LEFT JOIN ${ref("lookup_traffic_source_type_mapping")} lookup_tst on(lookup_tst.traffic_source_type_id  = combined.traffic_source_type )
+LEFT JOIN ${ref("lookup_device_type_mapping")} lookup_dt on(lookup_dt.device_type_id = combined.device_type)
+LEFT JOIN ${ref("lookup_operating_system")} lookup_os on(lookup_os.operating_system_id = combined.operating_system)
+)
+SELECT 
+TO_HEX(MD5(CONCAT(date, '-', video_id))) AS video_date_id,
+*
+FROM MAPPING_CTE
+
+
 
