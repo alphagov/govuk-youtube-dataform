@@ -34,7 +34,7 @@ SELECT
   api.engaged_views,
   api.watch_time_minutes
 FROM ${ref("stg_api_device_os")} api
-WHERE api.date < '2025-12-01'
+WHERE api.date < '2026-01-01'
 
 UNION ALL
 
@@ -50,7 +50,7 @@ SELECT
   SUM(dt.engaged_views)                  AS engaged_views,
   SUM(dt.watch_time_minutes)             AS watch_time_minutes
 FROM ${ref("stg_dt_device_os")} dt
-WHERE dt.date >= '2025-12-01'
+WHERE dt.date >= '2026-01-01'
 GROUP BY dt.date, dt.video_id, dt.device_type_name, dt.operating_system_name
 )
 

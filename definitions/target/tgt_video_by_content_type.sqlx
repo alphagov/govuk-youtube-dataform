@@ -67,7 +67,7 @@ FROM ${ref("stg_dt_channel_basic")} dt
 LEFT JOIN ${ref("lookup_content_type")} lct
   ON lct.dt_value = dt.live_or_on_demand
   AND lct.content_type != 'SHORTS'
-WHERE dt.date >= '2025-12-01'
+WHERE dt.date >= '2026-01-01'
 GROUP BY dt.date, dt.video_id, lct.content_type)
 SELECT
   date,

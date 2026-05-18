@@ -48,7 +48,7 @@ SELECT
   api.average_view_duration_percentage
 FROM ${ref("stg_api_user_activity")} api
 LEFT JOIN ${ref("lookup_video_id_title_mapping")} lv USING (video_id)
-WHERE api.date < '2025-12-01'
+WHERE api.date < '2026-01-01'
 
 UNION ALL
 
@@ -72,7 +72,7 @@ SELECT
   NULL                                   AS average_view_duration_percentage
 FROM ${ref("stg_dt_channel_basic")} dt
 LEFT JOIN ${ref("lookup_video_id_title_mapping")} lv USING (video_id)
-WHERE dt.date >= '2025-12-01'
+WHERE dt.date >= '2026-01-01'
 GROUP BY dt.date, dt.video_id, lv.video_title)
 SELECT 
 TO_HEX(MD5(CONCAT(date, '-', video_id))) AS video_date_id,
