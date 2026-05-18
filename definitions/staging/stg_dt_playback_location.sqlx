@@ -7,8 +7,9 @@ config {
   tags: ["staging"],
   assertions: {
     uniqueKey: ["date", "video_id", "playback_location_type", "playback_location_detail", "live_or_on_demand", "subscribed_status", "country_code"],
-    nonNull: ["date", "video_id", "playback_location_type", "views", "watch_time_minutes"]
-  },
+    nonNull: ["date", "video_id", "playback_location_type", "views", "watch_time_minutes"],
+    rowConditions: ['playback_location_type IN ["0","1","2","5","8","10"]' ]
+    },
   columns: {
     date: "YYYY-MM-DD date of data",
     video_id: "The UUID for the video",
@@ -29,18 +30,21 @@ config {
 
 SELECT
   date,
-  video_id,
-  live_or_on_demand,
-  subscribed_status,
-  country_code,
-  playback_location_type,
-  playback_location_detail,
-  views,
-  engaged_views,
-  watch_time_minutes,
-  average_view_duration_seconds,
-  average_view_duration_percentage,
-  red_views,
-  red_watch_time_minutes
-FROM ${ref("raw_p_channel_playback_location_a3_govuk_tb")}
+  playback_location.video_id,
+  playback_location.live_or_on_demand,
+  playback_location.subscribed_status,
+  playback_location.country_code,
+  lookup_playback_location.playback_location_type_name,
+  playback_location.playback_location_type,
+  playback_location.playback_location_detail,
+  playback_location.views,
+  playback_location.engaged_views,
+  playback_location.watch_time_minutes,
+  playback_location.average_view_duration_seconds,
+  playback_location.average_view_duration_percentage,
+  playback_location.red_views,
+  playback_location.red_watch_time_minutes
+FROM ${ref("raw_p_channel_playback_location_a3_govuk_tb")} as playback_location
+LEFT JOIN ${ref("lookup_playback_location_type")}  as lookup_playback_location
+on lookup_playback_location.playback_location_type_id = playback_location.playback_location_type
 WHERE video_id IS NOT NULL

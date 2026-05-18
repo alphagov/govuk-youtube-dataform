@@ -13,7 +13,7 @@ config {
    
     date: "YYYYMMDD date of data",
     channel_id: "the numeric code of the channel id",
-    video_id: "the UUID for the video",
+    video_id: "the UaUID for the video",
     live_or_on_demand: "if the video was stream lived or watched on demand",
     subscribed_status: "If the user activity for the video id is associated with subscribed users or non subscribed users",
     country_code: "The ISO country codde for the given country",
@@ -34,7 +34,7 @@ config {
 }
 
 SELECT 
-    CAST(date AS DATE) AS date,
+    PARSE_DATE('%Y%m%d', date) AS date,
     CAST(channel_id AS STRING) AS channel_id,
     CAST(video_id AS STRING) AS video_id, -- contains nulls 
     CAST(live_or_on_demand AS STRING) AS live_or_on_demand,
@@ -53,4 +53,4 @@ SELECT
     CAST(red_watch_time_minutes AS FLOAT64) AS red_watch_time_minutes
     FROM
  `gds-social-data.govuk_youtube_channel.p_channel_basic_a3_govuk_tb`
-  WHERE PARSE_DATE('%Y%m%d', date) >= '2025-12-01'
+  WHERE PARSE_DATE('%Y%m%d', date) >= '2026-01-01'

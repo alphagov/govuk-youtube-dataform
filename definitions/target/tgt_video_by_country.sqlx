@@ -43,5 +43,5 @@ SELECT
 FROM ${ref("stg_dt_channel_basic")} dt
 LEFT JOIN ${ref("lookup_country_code_mapping")} lcc
   ON lcc.country_code = dt.country_code
-WHERE dt.date >= '2025-12-01'
+WHERE dt.date >= '2026-01-01'
 GROUP BY dt.date, dt.video_id, dt.country_code, lcc.country

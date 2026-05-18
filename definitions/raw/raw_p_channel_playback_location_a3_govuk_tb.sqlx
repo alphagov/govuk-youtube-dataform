@@ -45,4 +45,4 @@ SELECT
     red_watch_time_minutes
 FROM
   `gds-social-data.govuk_youtube_channel.p_channel_playback_location_a3_govuk_tb`
- WHERE PARSE_DATE('%Y%m%d', date) >= '2025-12-01'
+ WHERE PARSE_DATE('%Y%m%d', date) >= '2026-01-01'
