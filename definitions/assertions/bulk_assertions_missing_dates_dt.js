@@ -1,3 +1,5 @@
+const {apiDtCutOffDate} = require('includes/constants');
+
 const pChannelTables = [
   "raw_p_channel_basic_a3_govuk_tb",
   "raw_p_channel_combined_a3_govuk_tb",
@@ -11,12 +13,12 @@ const pChannelTables = [
 
 pChannelTables.forEach(tableName => {
   assert(`${tableName}_date_spine_check`)
-    .description(`Fails if any date between 2026-01-01 and two days ago is missing from ${tableName}`)
+    .description(`Fails if any date between ${apiDtCutOffDate} and two days ago is missing from ${tableName}`)
     .query(ctx => `
       WITH date_spine AS (
         SELECT date
         FROM UNNEST(GENERATE_DATE_ARRAY(
-          DATE('2026-01-01'),
+          DATE('${apiDtCutOffDate}'),
           DATE_SUB(CURRENT_DATE(), INTERVAL 2 DAY)
         )) AS date
       ),

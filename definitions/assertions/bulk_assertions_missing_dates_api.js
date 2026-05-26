@@ -1,3 +1,5 @@
+const {apiDtCutOffDate} = require('includes/constants');
+
 const apiTables = [
   //"raw_demographic_information", // monthly, uses month instead of date
   //"raw_engagement_and_content_location", // monthly, uses month instead of date
@@ -10,13 +12,13 @@ const apiTables = [
 
 apiTables.forEach(tableName => {
   assert(`${tableName}_api_date_spine_check`)
-    .description(`Fails if any date between 2025-01-01 and 2026-01-01 are missing from ${tableName}`)
+    .description(`Fails if any date between 2025-01-01 and ${apiDtCutOffDate} are missing from ${tableName}`)
     .query(ctx => `
       WITH date_spine AS (
         SELECT date
         FROM UNNEST(GENERATE_DATE_ARRAY(
           DATE('2025-01-01'),
-          DATE('2026-01-01')
+          DATE('${apiDtCutOffDate}')
         )) AS date
       ),
       dates_in_table AS (
