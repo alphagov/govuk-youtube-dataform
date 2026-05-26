@@ -28,6 +28,9 @@ config {
     average_view_duration_percentage: "Monthly average percentage of video watched (API only; NULL for DT rows)"
   }
 }
+js {
+  const {apiDtCutOffDate} = require('includes/constants');
+}
 
 WITH union_sources AS (
 
@@ -50,7 +53,7 @@ WITH union_sources AS (
     AVG(api.average_view_duration_percentage) AS average_view_duration_percentage
   FROM ${ref("stg_api_user_activity")} api
   LEFT JOIN ${ref("lookup_video_id_title_mapping")} lv USING (video_id)
-  WHERE api.date < '2026-01-01'
+  WHERE api.date < '${apiDtCutOffDate}'
   GROUP BY month, api.video_id, lv.video_title
 
   UNION ALL
@@ -74,7 +77,7 @@ WITH union_sources AS (
     NULL                                    AS average_view_duration_percentage
   FROM ${ref("stg_dt_channel_basic")} dt
   LEFT JOIN ${ref("lookup_video_id_title_mapping")} lv USING (video_id)
-  WHERE dt.date >= '2026-01-01'
+  WHERE dt.date >= '${apiDtCutOffDate}'
   GROUP BY month, dt.video_id, lv.video_title
 
 )

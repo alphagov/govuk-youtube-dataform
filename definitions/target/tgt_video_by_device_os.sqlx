@@ -21,6 +21,9 @@ config {
     watch_time_minutes: "Total estimated minutes watched on this device/OS combination"
   }
 }
+js {
+  const {apiDtCutOffDate} = require('includes/constants');
+}
 
 -- Historical: API only (pre-Dec 2025)
 WITH UNION_CTE AS (
@@ -34,7 +37,7 @@ SELECT
   api.engaged_views,
   api.watch_time_minutes
 FROM ${ref("stg_api_device_os")} api
-WHERE api.date < '2026-01-01'
+WHERE api.date < '${apiDtCutOffDate}'
 
 UNION ALL
 
@@ -50,7 +53,7 @@ SELECT
   SUM(dt.engaged_views)                  AS engaged_views,
   SUM(dt.watch_time_minutes)             AS watch_time_minutes
 FROM ${ref("stg_dt_device_os")} dt
-WHERE dt.date >= '2026-01-01'
+WHERE dt.date >= '${apiDtCutOffDate}'
 GROUP BY dt.date, dt.video_id, dt.device_type_name, dt.operating_system_name
 )
 

@@ -26,6 +26,9 @@ config {
     average_view_duration_percentage: "Average percentage of video watched (API only; NULL for DT rows)"
   }
 }
+js {
+  const {apiDtCutOffDate} = require('includes/constants');
+}
 
 -- Historical: API only (pre-Dec 2025)
 -- API content_type string mapped to canonical value via lookup
@@ -45,7 +48,7 @@ SELECT
 FROM ${ref("stg_api_playback_details")} api
 LEFT JOIN ${ref("lookup_content_type")} lct
   ON lct.api_value = api.content_type
-WHERE api.date < '2025-12-01'
+WHERE api.date < '${apiDtCutOffDate}'
 
 UNION ALL
 
@@ -67,7 +70,7 @@ FROM ${ref("stg_dt_channel_basic")} dt
 LEFT JOIN ${ref("lookup_content_type")} lct
   ON lct.dt_value = dt.live_or_on_demand
   AND lct.content_type != 'SHORTS'
-WHERE dt.date >= '2026-01-01'
+WHERE dt.date >= '${apiDtCutOffDate}'
 GROUP BY dt.date, dt.video_id, lct.content_type)
 SELECT
   date,
