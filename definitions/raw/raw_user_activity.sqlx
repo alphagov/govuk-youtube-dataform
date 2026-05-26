@@ -25,8 +25,11 @@ config {
     averageViewPercentage: "The average percentage of a video watched during a video playback. As of December 13, 2021, this metric excludes looping clips traffic."
   }
 }
+js {
+  const {apiDtCutOffDate} = require('includes/constants');
+}
 
-SELECT 
+SELECT
 CAST(video_id AS STRING) AS video_id,
 CAST(day AS DATE) AS date,
 CAST(engagedViews AS INT) AS engagedViews,
@@ -42,4 +45,4 @@ CAST(averageViewDuration AS FLOAT64) AS averageViewDuration,
 CAST(averageViewPercentage AS FLOAT64) AS averageViewPercentage
 FROM
  `gds-social-data.govuk_youtube_channel_staging.user_activity`
-   WHERE day < '2026-01-01'
+   WHERE day < '${apiDtCutOffDate}'

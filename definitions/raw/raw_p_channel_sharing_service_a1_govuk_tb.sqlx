@@ -20,8 +20,11 @@ config {
     shares: "The number of times that users shared a video through the Share button."
   }
 }
+js {
+  const {apiDtCutOffDate} = require('includes/constants');
+}
 
-SELECT 
+SELECT
     PARSE_DATE('%Y%m%d', date) AS date,
     channel_id,
     video_id,
@@ -32,4 +35,4 @@ SELECT
     shares
     FROM
  `gds-social-data.govuk_youtube_channel.p_channel_sharing_service_a1_govuk_tb`
- WHERE PARSE_DATE('%Y%m%d', date) >= '2026-01-01'
+ WHERE PARSE_DATE('%Y%m%d', date) >= '${apiDtCutOffDate}'

@@ -25,6 +25,9 @@ config {
         red_watch_time_minutes: "The number of minutes that YouTube Red subscribers watched content."
     }
 }
+js {
+  const {apiDtCutOffDate} = require('includes/constants');
+}
 
   -- A table that contains the data transfer table channel_combined information
 SELECT
@@ -45,4 +48,4 @@ SELECT
     red_watch_time_minutes
 FROM
   `gds-social-data.govuk_youtube_channel.p_channel_playback_location_a3_govuk_tb`
- WHERE PARSE_DATE('%Y%m%d', date) >= '2026-01-01'
+ WHERE PARSE_DATE('%Y%m%d', date) >= '${apiDtCutOffDate}'

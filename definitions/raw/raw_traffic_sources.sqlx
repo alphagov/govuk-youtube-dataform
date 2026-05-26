@@ -19,8 +19,11 @@ config {
     estimatedMinutesWatched: "An esimate of the minutes watched, rounded to nearest minute"
   }
 }
+js {
+  const {apiDtCutOffDate} = require('includes/constants');
+}
 
-SELECT 
+SELECT
     CAST(video_id AS STRING) AS video_id,
     CAST(day AS DATE) AS date,
     CAST(insightTrafficSourceType AS STRING) AS insightTrafficSourceType,
@@ -30,4 +33,4 @@ SELECT
     CAST(estimatedMinutesWatched AS FLOAT64) AS estimatedMinutesWatched
 FROM
  `gds-social-data.govuk_youtube_channel_staging.traffic_sources`
-   WHERE day < '2026-01-01'
+   WHERE day < '${apiDtCutOffDate}'
