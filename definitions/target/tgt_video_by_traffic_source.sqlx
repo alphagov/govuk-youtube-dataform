@@ -22,6 +22,9 @@ config {
     watch_time_minutes: "Total estimated minutes watched via this traffic source"
   }
 }
+js {
+  const {apiDtCutOffDate} = require('includes/constants');
+}
 
 -- Historical: API only (pre-Dec 2025)
 -- traffic_source_type is an API string label (e.g. YT_SEARCH, EXT_URL)
@@ -34,7 +37,7 @@ SELECT
   api.engaged_views,
   api.watch_time_minutes
 FROM ${ref("stg_api_traffic_sources")} api
-WHERE api.date < '2025-12-01'
+WHERE api.date < '${apiDtCutOffDate}'
 
 UNION ALL
 
@@ -52,5 +55,5 @@ SELECT
 FROM ${ref("stg_dt_traffic_sources")} dt
 LEFT JOIN ${ref("lookup_traffic_source_type_mapping")} lk
   ON lk.traffic_source_type_id = dt.traffic_source_type
-WHERE dt.date >= '2025-12-01'
+WHERE dt.date >= '${apiDtCutOffDate}'
 GROUP BY dt.date, dt.video_id, dt.traffic_source_type, lk.traffic_source_type_name

@@ -7,22 +7,17 @@ config {
     video_id: "video id identifier",
     month: "The month the data covers ",
     sharingService: "The video sharing service",
-    shares: "The number of times a video has been shared"
+    shares: "The number of times a video has been shared",
   }
 }
-
-SELECT 
-<<<<<<< HEAD
+js {
+  const {apiDtCutOffDate} = require('includes/constants');
+}
+SELECT
     CAST(video_id AS STRING) AS video_id,
     CAST(MONTH AS DATE) AS month,
     CAST(sharingService AS STRING) AS sharingService,
     CAST(shares AS INT) AS shares
-=======
-    video_id,
-    month.
-    sharingService,
-    shares
->>>>>>> 3668639 (added monthly column to raw_engagement_and_content_location, as the ingestion workflow is modified to partition by month for engagement_and_content_locaiton and other perodic reports. Also fixed incorrect hard coding of table in definitions/staging/stg_api_user_activity)
 FROM
  `gds-social-data.govuk_youtube_channel_staging.engagement_and_content_location`
-  WHERE month < '2025-12-01'
+  WHERE month < '${apiDtCutOffDate}'

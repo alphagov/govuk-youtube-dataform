@@ -7,6 +7,9 @@
 config {
   type: "view"
 }
+js {
+  const {apiDtCutOffDate} = require('includes/constants');
+}
 
 SELECT
   'tgt_video_performance_daily'               AS model,
@@ -14,9 +17,9 @@ SELECT
   MIN(date)                                   AS min_date,
   MAX(date)                                   AS max_date,
   COUNTIF(data_source = 'api'
-    AND date >= '2025-12-01')                 AS api_rows_after_cutoff,
+    AND date >= '${apiDtCutOffDate}')                 AS api_rows_after_cutoff,
   COUNTIF(data_source = 'dt'
-    AND date < '2025-12-01')                  AS dt_rows_before_cutoff
+    AND date < '${apiDtCutOffDate}')                  AS dt_rows_before_cutoff
 FROM ${ref("tgt_video_performance_daily")}
 GROUP BY data_source
 
@@ -28,9 +31,9 @@ SELECT
   MIN(date)                                   AS min_date,
   MAX(date)                                   AS max_date,
   COUNTIF(data_source = 'api'
-    AND date >= '2025-12-01')                 AS api_rows_after_cutoff,
+    AND date >= '${apiDtCutOffDate}')                 AS api_rows_after_cutoff,
   COUNTIF(data_source = 'dt'
-    AND date < '2025-12-01')                  AS dt_rows_before_cutoff
+    AND date < '${apiDtCutOffDate}')                  AS dt_rows_before_cutoff
 FROM ${ref("tgt_video_by_content_type")}
 GROUP BY data_source
 
@@ -42,9 +45,9 @@ SELECT
   MIN(date)                                   AS min_date,
   MAX(date)                                   AS max_date,
   COUNTIF(data_source = 'api'
-    AND date >= '2025-12-01')                 AS api_rows_after_cutoff,
+    AND date >= '${apiDtCutOffDate}')                 AS api_rows_after_cutoff,
   COUNTIF(data_source = 'dt'
-    AND date < '2025-12-01')                  AS dt_rows_before_cutoff
+    AND date < '${apiDtCutOffDate}')                  AS dt_rows_before_cutoff
 FROM ${ref("tgt_video_by_device_os")}
 GROUP BY data_source
 
@@ -56,9 +59,9 @@ SELECT
   MIN(date)                                   AS min_date,
   MAX(date)                                   AS max_date,
   COUNTIF(data_source = 'api'
-    AND date >= '2025-12-01')                 AS api_rows_after_cutoff,
+    AND date >= '${apiDtCutOffDate}')                 AS api_rows_after_cutoff,
   COUNTIF(data_source = 'dt'
-    AND date < '2025-12-01')                  AS dt_rows_before_cutoff
+    AND date < '${apiDtCutOffDate}')                  AS dt_rows_before_cutoff
 FROM ${ref("tgt_video_by_traffic_source")}
 GROUP BY data_source
 

@@ -17,6 +17,9 @@ config {
         video_thumbnail_impressions: ""
     }
 }
+js {
+  const {apiDtCutOffDate} = require('includes/constants');
+}
 
   -- table containing the combined table for device_type, operating_system and traffic_soucrce and traffic detail
   -- not currently using video_thumbnail_impressions or video_thumbnail_imporessions_ctr as they are legacy values and coverage is not certain
@@ -33,4 +36,4 @@ SELECT
   video_thumbnail_impressions
 FROM
   `gds-social-data.govuk_youtube_channel.p_channel_reach_combined_a1_govuk_tb`
- WHERE PARSE_DATE('%Y%m%d', date) >= '2025-12-01'
+ WHERE PARSE_DATE('%Y%m%d', date) >= '${apiDtCutOffDate}'

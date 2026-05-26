@@ -28,6 +28,9 @@ config {
     average_view_duration_percentage: "Average percentage of video watched (API only; NULL for DT rows)"
   }
 }
+js {
+  const {apiDtCutOffDate} = require('includes/constants');
+}
 WITH UNION_SOURCES AS (
 -- Historical: API only (pre-Dec 2025)
 SELECT
@@ -48,7 +51,7 @@ SELECT
   api.average_view_duration_percentage
 FROM ${ref("stg_api_user_activity")} api
 LEFT JOIN ${ref("lookup_video_id_title_mapping")} lv USING (video_id)
-WHERE api.date < '2025-12-01'
+WHERE api.date < '${apiDtCutOffDate}'
 
 UNION ALL
 
@@ -72,11 +75,13 @@ SELECT
   NULL                                   AS average_view_duration_percentage
 FROM ${ref("stg_dt_channel_basic")} dt
 LEFT JOIN ${ref("lookup_video_id_title_mapping")} lv USING (video_id)
-WHERE dt.date >= '2025-12-01'
+WHERE dt.date >= '${apiDtCutOffDate}'
 GROUP BY dt.date, dt.video_id, lv.video_title)
 SELECT 
+TO_HEX(MD5(CONCAT(date, '-', video_id))) AS video_date_id,
 sources.date,
 sources.video_id,
+short.long_short_format,
 sources.video_title,
 sources.data_source,
 sources.views,
@@ -105,3 +110,5 @@ metadata.madeForKids,
 FROM UNION_SOURCES as sources 
 LEFT JOIN ${ref("raw_video_id_metadata_mapping")} as metadata
 using (video_id)
+LEFT JOIN ${ref("raw_video_id_short")} short
+using(video_id)

@@ -29,8 +29,11 @@ config {
 
   }
 }
+js {
+  const {apiDtCutOffDate} = require('includes/constants');
+}
 
-SELECT 
+SELECT
     PARSE_DATE('%Y%m%d', date) AS date,
     channel_id,
     video_id,
@@ -48,4 +51,4 @@ SELECT
     red_watch_time_minutes,
     FROM
  `gds-social-data.govuk_youtube_channel.p_channel_traffic_source_a3_govuk_tb`
- WHERE PARSE_DATE('%Y%m%d', date) >= '2025-12-01'
+ WHERE PARSE_DATE('%Y%m%d', date) >= '${apiDtCutOffDate}'

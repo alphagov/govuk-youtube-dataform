@@ -5,7 +5,7 @@ config {
     nonNull: ["playback_location_type_id", "playback_location_type_name"]
   },
   columns: {
-    playback_location_type_id: "Integer ID for the playback location type",
+    playback_location_type_id: "Integer ID for the playback location type, used by the Data Transfer raw_p_channel_playback_location table",
     playback_location_type_name: "String name of the playback location type"
   }
 }
@@ -14,12 +14,12 @@ SELECT
   *
 FROM
   UNNEST(
-    ARRAY<STRUCT<playback_location_type_id INT64, playback_location_type_name STRING>>[
-      (0, "YouTube watch page or app"),
-      (1, "Embedded player"),
-      (2, "YouTube channel page"),
-      (5, "Other"),
-      (7, "YouTube home, subscriptions, or browse"),
-      (8, "YouTube search results"),
-      (10, "YouTube Shorts feed")
+    ARRAY<STRUCT<playback_location_type_id INT64, playback_location_type_name STRING, playback_location_type_description STRING>>[
+      (0, "WATCH", "WATCH Official YouTube app (e.g., Android app) or YouTube website watch page."),
+      (1, "EMBEDDED", "Another website or application where the video was embedded using an <iframe> or <object> tag."),
+      (2, "CHANNEL", "The video was played directly on a channel page."),
+      (5, "YT_OTHER", ""),
+      (7, "BROWSE", "YouTube home page, subscription feed, or other browsing features"),
+      (8, "SEARCH", "Youtube Search results page"),
+      (10, "SHORTS_FEED", "Youtube Shorts feed")
     ])

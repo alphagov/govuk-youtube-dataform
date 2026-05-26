@@ -22,8 +22,11 @@ config {
     averageViewPercentage: "The average percentage of a video viewed"
   }
 }
+js {
+  const {apiDtCutOffDate} = require('includes/constants');
+}
 
-SELECT 
+SELECT
     CAST(video_id AS STRING) AS video_id,
     CAST(day AS DATE) as date,
     CAST(creatorContentType AS STRING) AS creatorContentType,
@@ -37,4 +40,4 @@ SELECT
 
 FROM
  `gds-social-data.govuk_youtube_channel_staging.playback_details`
-   WHERE day < '2025-12-01'
+   WHERE day < '${apiDtCutOffDate}'

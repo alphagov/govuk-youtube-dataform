@@ -19,6 +19,9 @@ config {
         views_percentage: "The percentage of viewers who were logged in when watching the video or playlist."
     }
 }
+js {
+  const {apiDtCutOffDate} = require('includes/constants');
+}
 
   -- A table that contains the data transfer table channel_combined information
 SELECT
@@ -33,4 +36,4 @@ SELECT
         views_percentage
 FROM
   `gds-social-data.govuk_youtube_channel.p_channel_demographics_a1_govuk_tb`
- WHERE PARSE_DATE('%Y%m%d', date) >= '2025-12-01'
+ WHERE PARSE_DATE('%Y%m%d', date) >= '${apiDtCutOffDate}'
