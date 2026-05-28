@@ -6,6 +6,12 @@
 -- aggregated across sub-dimensions.
 config {
   type: "table",
+  tags: ["target"],
+  bigquery: {
+      partitionBy: "date",
+      clusterBy: ["video_date_id"],
+      requirePartitionFilter:true
+  },
   assertions: {
     uniqueKey: ["date", "video_id"],
     nonNull: ["date", "video_id", "data_source", "views"]

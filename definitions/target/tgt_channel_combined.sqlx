@@ -1,6 +1,11 @@
     config {
         type: "table",
         tags: ["target"],
+        bigquery: {
+            partitionBy: "date",
+            clusterBy: ["video_date_id"],
+            requirePartitionFilter:true
+        },
         assertions: {
             uniqueKey: ["date", "channel_id", "video_id", "live_or_on_demand", "subscribed_status","playback_location_type","traffic_source_type","device_type","operating_system"],
             nonNull: ["date", "channel_id", "video_id", "live_or_on_demand", "subscribed_status","playback_location_type","traffic_source_type","device_type","operating_system"],

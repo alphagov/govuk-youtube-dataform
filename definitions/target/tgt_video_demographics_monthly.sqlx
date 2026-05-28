@@ -7,6 +7,11 @@
 -- Note: API demographics were unavailable from 16/03/2026 onwards due to an outage (issue: 488961396).
 config {
   type: "table",
+  tags: ["target"],
+  bigquery: {
+      partitionBy: "month",
+      requirePartitionFilter:true
+  },
   assertions: {
     uniqueKey: ["video_id", "month", "age_group", "gender"],
     nonNull: ["video_id", "month", "age_group", "gender", "data_source"]

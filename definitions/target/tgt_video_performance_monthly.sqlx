@@ -6,6 +6,11 @@
 -- as they cannot be reliably aggregated across sub-dimensions or across days within a month.
 config {
   type: "table",
+  tags: ["target"],
+  bigquery: {
+      partitionBy: "month",
+      requirePartitionFilter:true
+  },
   assertions: {
     uniqueKey: ["video_id", "month"],
     nonNull: ["video_id", "month", "data_source", "views"]
