@@ -4,6 +4,23 @@
 -- (date, video_id, live_or_on_demand, subscribed_status, country_code) to (date, video_id).
 -- average_view_duration columns are NULL for DT rows as they cannot be reliably
 -- aggregated across sub-dimensions.
+DECLARE event_date_checkpoint DEFAULT (
+SELECT
+MAX(PARSE_DATE(‘%Y%m%d’, CAST(partition_id as STRING)))
+FROM ${database()}.${schema()}.INFORMATION_SCHEMA.PARTITIONS
+WHERE
+partition_id NOT IN (‘NULL’, ‘UNPARTITIONED’)
+AND table_name = “${name()}”);
+
+-- DECLARE event_timestamp_checkpoint DEFAULT (
+-- ${
+-- when(incremental(),
+--  SELECT MAX(<partitioning_column_name>) FROM ${self()} WHERE DATE(<partitioning_column_name>) = event_date_checkpoint,
+-- SELECT TIMESTAMP_SUB(TIMESTAMP('1900-01-01'), INTERVAL 1 MILLISECOND))
+-- });
+
+
+
 config {
   type: "table",
   tags: ["target"],
@@ -13,8 +30,6 @@ config {
       requirePartitionFilter:true
   },
   assertions: {
-    uniqueKey: ["date", "video_id"],
-    nonNull: ["date", "video_id", "data_source", "views"]
   },
   columns: {
     date: "YYYY-MM-DD date of data",

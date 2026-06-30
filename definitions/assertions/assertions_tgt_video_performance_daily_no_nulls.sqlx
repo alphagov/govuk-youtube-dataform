@@ -1,0 +1,13 @@
+config {
+  type: "assertion"
+}
+
+SELECT *
+FROM ${ref("tgt_video_performance_daily")}
+WHERE date >= '2000-01-01'
+  AND (
+    date IS NULL OR
+    video_id IS NULL OR
+    data_source IS NULL OR
+    views IS NULL
+  )
