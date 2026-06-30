@@ -1,0 +1,12 @@
+config {
+  type: "assertion"
+}
+
+SELECT
+  date,
+  video_id,
+  COUNT(1) as index_row_count
+FROM ${ref("tgt_video_performance_daily")}
+WHERE date >= '2000-01-01' 
+GROUP BY date, video_id
+HAVING index_row_count > 1
