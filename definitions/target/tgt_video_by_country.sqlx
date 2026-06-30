@@ -5,6 +5,11 @@
 -- live_or_on_demand and subscribed_status sub-dimensions.
 config {
   type: "table",
+  tags: ["target"],
+  bigquery: {
+      partitionBy: "date",
+      requirePartitionFilter:true
+  },
   assertions: {
     uniqueKey: ["date", "video_id", "country_code"],
     nonNull: ["date", "video_id", "country_code", "data_source", "views"]

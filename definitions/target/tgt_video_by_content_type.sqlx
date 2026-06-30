@@ -8,9 +8,14 @@
 -- aggregated across sub-dimensions.
 config {
   type: "table",
+  tags: ["target"],
   assertions: {
     uniqueKey: ["date", "video_id", "content_type"],
     nonNull: ["date", "video_id", "content_type", "data_source", "views"]
+  },
+  bigquery: {
+      partitionBy: "date",
+      requirePartitionFilter:true
   },
   columns: {
     date: "YYYY-MM-DD date of data",

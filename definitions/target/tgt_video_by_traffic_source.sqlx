@@ -8,6 +8,11 @@
 -- DT rows are aggregated to (date, video_id, traffic_source_type) grain.
 config {
   type: "table",
+  tags: ["target"],
+  bigquery: {
+      partitionBy: "date",
+      requirePartitionFilter:true
+  },
   assertions: {
     uniqueKey: ["date", "video_id", "traffic_source_type_name"],
     nonNull: ["date", "video_id", "traffic_source_type_name", "data_source", "views"]

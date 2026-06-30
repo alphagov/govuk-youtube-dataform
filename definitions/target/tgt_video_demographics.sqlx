@@ -8,6 +8,11 @@
 -- join to fct_video_performance_daily and weight by total views.
 config {
   type: "table",
+  tags: ["target"],
+  bigquery: {
+      partitionBy: "date",
+      requirePartitionFilter:true
+  },
   assertions: {
     uniqueKey: ["date", "video_id", "age_group", "gender"],
     nonNull: ["date", "video_id", "age_group", "gender", "data_source"]
