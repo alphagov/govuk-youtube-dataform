@@ -3,20 +3,11 @@ config {
   description: "Fails if duplicate rows exist for (date, video_id, country_code)"
 }
 
-WITH duplicate_keys AS (
-  SELECT
-    date,
-    video_id,
-    country_code,
-    COUNT(*) AS duplicate_count
-  FROM ${ref("tgt_video_by_country")}
-  WHERE (date >= DATE('1900-01-01') OR date IS NULL)
-  GROUP BY date, video_id, country_code
-  HAVING COUNT(*) > 1
-)
 SELECT
   t.*,
-  d.duplicate_count
+  COUNT(*) OVER (
+    PARTITION BY date, video_id, country_code
+  ) AS duplicate_count
 FROM ${ref("tgt_video_by_country")} t
-JOIN duplicate_keys d USING (date, video_id, country_code)
-WHERE (t.date >= DATE('1900-01-01') OR t.date IS NULL)
+WHERE (date >= DATE('1900-01-01') OR date IS NULL)
+QUALIFY duplicate_count > 1

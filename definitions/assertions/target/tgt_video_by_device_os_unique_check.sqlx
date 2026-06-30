@@ -3,21 +3,11 @@ config {
   description: "Fails if duplicate rows exist for (date, video_id, device_type_name, operating_system_name)"
 }
 
-WITH duplicate_keys AS (
-  SELECT
-    date,
-    video_id,
-    device_type_name,
-    operating_system_name,
-    COUNT(*) AS duplicate_count
-  FROM ${ref("tgt_video_by_device_os")}
-  WHERE (date >= DATE('1900-01-01') OR date IS NULL)
-  GROUP BY date, video_id, device_type_name, operating_system_name
-  HAVING COUNT(*) > 1
-)
 SELECT
   t.*,
-  d.duplicate_count
+  COUNT(*) OVER (
+    PARTITION BY date, video_id, device_type_name, operating_system_name
+  ) AS duplicate_count
 FROM ${ref("tgt_video_by_device_os")} t
-JOIN duplicate_keys d USING (date, video_id, device_type_name, operating_system_name)
-WHERE (t.date >= DATE('1900-01-01') OR t.date IS NULL)
+WHERE (date >= DATE('1900-01-01') OR date IS NULL)
+QUALIFY duplicate_count > 1

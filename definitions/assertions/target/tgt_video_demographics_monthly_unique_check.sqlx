@@ -3,21 +3,11 @@ config {
   description: "Fails if duplicate rows exist for (video_id, month, age_group, gender)"
 }
 
-WITH duplicate_keys AS (
-  SELECT
-    video_id,
-    month,
-    age_group,
-    gender,
-    COUNT(*) AS duplicate_count
-  FROM ${ref("tgt_video_demographics_monthly")}
-  WHERE (month >= DATE('1900-01-01') OR month IS NULL)
-  GROUP BY video_id, month, age_group, gender
-  HAVING COUNT(*) > 1
-)
 SELECT
   t.*,
-  d.duplicate_count
+  COUNT(*) OVER (
+    PARTITION BY video_id, month, age_group, gender
+  ) AS duplicate_count
 FROM ${ref("tgt_video_demographics_monthly")} t
-JOIN duplicate_keys d USING (video_id, month, age_group, gender)
-WHERE (t.month >= DATE('1900-01-01') OR t.month IS NULL)
+WHERE (month >= DATE('1900-01-01') OR month IS NULL)
+QUALIFY duplicate_count > 1

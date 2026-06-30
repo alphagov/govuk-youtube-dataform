@@ -3,45 +3,20 @@ config {
   description: "Fails if duplicate rows exist for tgt_channel_combined unique key"
 }
 
-WITH duplicate_keys AS (
-  SELECT
-    date,
-    channel_id,
-    video_id,
-    live_or_on_demand,
-    subscribed_status,
-    playback_location,
-    traffic_source,
-    device_type,
-    operating_system,
-    COUNT(*) AS duplicate_count
-  FROM ${ref("tgt_channel_combined")}
-  WHERE (date >= DATE('1900-01-01') OR date IS NULL)
-  GROUP BY
-    date,
-    channel_id,
-    video_id,
-    live_or_on_demand,
-    subscribed_status,
-    playback_location,
-    traffic_source,
-    device_type,
-    operating_system
-  HAVING COUNT(*) > 1
-)
 SELECT
   t.*,
-  d.duplicate_count
+  COUNT(*) OVER (
+    PARTITION BY
+      date,
+      channel_id,
+      video_id,
+      live_or_on_demand,
+      subscribed_status,
+      playback_location_type,
+      traffic_source_type,
+      device_type,
+      operating_system
+  ) AS duplicate_count
 FROM ${ref("tgt_channel_combined")} t
-JOIN duplicate_keys d USING (
-  date,
-  channel_id,
-  video_id,
-  live_or_on_demand,
-  subscribed_status,
-  playback_location,
-  traffic_source,
-  device_type,
-  operating_system
-)
-WHERE (t.date >= DATE('1900-01-01') OR t.date IS NULL)
+WHERE (date >= DATE('1900-01-01') OR date IS NULL)
+QUALIFY duplicate_count > 1
