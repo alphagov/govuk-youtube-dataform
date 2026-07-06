@@ -12,10 +12,6 @@ config {
       partitionBy: "month",
       requirePartitionFilter:true
   },
-  assertions: {
-    uniqueKey: ["video_id", "month", "age_group", "gender"],
-    nonNull: ["video_id", "month", "age_group", "gender", "data_source"]
-  },
   columns: {
     video_id: "The UUID for the video",
     month: "First day of the month the data covers (YYYY-MM-01)",

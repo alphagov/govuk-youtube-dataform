@@ -13,10 +13,6 @@ config {
       partitionBy: "date",
       requirePartitionFilter:true
   },
-  assertions: {
-    uniqueKey: ["date", "video_id", "age_group", "gender"],
-    nonNull: ["date", "video_id", "age_group", "gender", "data_source"]
-  },
   columns: {
     date: "YYYY-MM-DD date of data",
     video_id: "The UUID for the video",

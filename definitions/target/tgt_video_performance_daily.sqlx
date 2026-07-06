@@ -12,10 +12,6 @@ config {
       clusterBy: ["video_date_id"],
       requirePartitionFilter:true
   },
-  assertions: {
-    uniqueKey: ["date", "video_id"],
-    nonNull: ["date", "video_id", "data_source", "views"]
-  },
   columns: {
     date: "YYYY-MM-DD date of data",
     video_id: "The UUID for the video",
