@@ -1,0 +1,16 @@
+config {
+  type: "assertion",
+  description: "Fails if required fields are NULL in tgt_video_by_country"
+}
+
+SELECT
+  *
+FROM ${ref("tgt_video_by_country")}
+WHERE (date >= DATE('1900-01-01') OR date IS NULL)
+  AND (
+    date IS NULL
+    OR video_id IS NULL
+    OR country_code IS NULL
+    OR data_source IS NULL
+    OR views IS NULL
+  )

@@ -1,0 +1,23 @@
+config {
+  type: "assertion",
+  description: "Fails if duplicate rows exist for (date, video_id, age_group, gender)"
+}
+
+WITH duplicate_keys AS (
+  SELECT
+    date,
+    video_id,
+    age_group,
+    gender,
+    COUNT(*) AS duplicate_count
+  FROM ${ref("tgt_video_demographics")}
+  WHERE (date >= DATE('1900-01-01') OR date IS NULL)
+  GROUP BY date, video_id, age_group, gender
+  HAVING COUNT(*) > 1
+)
+SELECT
+  t.*,
+  d.duplicate_count
+FROM ${ref("tgt_video_demographics")} t
+JOIN duplicate_keys d USING (date, video_id, age_group, gender)
+WHERE (t.date >= DATE('1900-01-01') OR t.date IS NULL)
