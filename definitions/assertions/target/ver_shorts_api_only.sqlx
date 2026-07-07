@@ -17,4 +17,5 @@ SELECT
 FROM ${ref("tgt_video_by_content_type")}
 WHERE content_type = 'SHORTS'
   AND data_source != 'api'
+  AND (date >= DATE('1900-01-01') OR date IS NULL)
 ORDER BY date, video_id
