@@ -19,7 +19,7 @@ pChannelTables.forEach(tableName => {
         SELECT date
         FROM UNNEST(GENERATE_DATE_ARRAY(
           DATE('${apiDtCutOffDate}'),
-          DATE_SUB(CURRENT_DATE(), INTERVAL 2 DAY)
+          DATE_SUB(CURRENT_DATE(), INTERVAL 3 DAY)
         )) AS date
       ),
       dates_in_table AS (

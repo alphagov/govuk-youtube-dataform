@@ -18,7 +18,7 @@ const tablesToCheck = [
 ]
 
 tablesToCheck.forEach(tableName => {
-  assert(`assert_not_empty_${tableName}`)
+  assert(`${tableName}_ assert_not_empty`)
     .description(`Check that ${tableName} is not empty`)
     .query(ctx => `
       SELECT

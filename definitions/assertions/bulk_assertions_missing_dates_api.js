@@ -18,7 +18,7 @@ apiTables.forEach(tableName => {
         SELECT date
         FROM UNNEST(GENERATE_DATE_ARRAY(
           DATE('2025-01-01'),
-          DATE('${apiDtCutOffDate}')
+          DATE_SUB(DATE('${apiDtCutOffDate}'), INTERVAL 1 DAY)
         )) AS date
       ),
       dates_in_table AS (
