@@ -13,8 +13,8 @@ WHERE (date >= DATE('1900-01-01') OR date IS NULL)
     OR video_id IS NULL
     OR live_or_on_demand IS NULL
     OR subscribed_status IS NULL
-    OR playback_location_type IS NULL
-    OR traffic_source_type IS NULL
+    OR playback_location IS NULL
+    OR traffic_source IS NULL
     OR device_type IS NULL
     OR operating_system IS NULL
   )

@@ -10,8 +10,8 @@ WITH duplicate_keys AS (
     video_id,
     live_or_on_demand,
     subscribed_status,
-    playback_location_type,
-    traffic_source_type,
+    playback_location,
+    traffic_source,
     device_type,
     operating_system,
     COUNT(*) AS duplicate_count
@@ -23,8 +23,8 @@ WITH duplicate_keys AS (
     video_id,
     live_or_on_demand,
     subscribed_status,
-    playback_location_type,
-    traffic_source_type,
+    playback_location,
+    traffic_source,
     device_type,
     operating_system
   HAVING COUNT(*) > 1
@@ -39,8 +39,8 @@ JOIN duplicate_keys d USING (
   video_id,
   live_or_on_demand,
   subscribed_status,
-  playback_location_type,
-  traffic_source_type,
+  playback_location,
+  traffic_source,
   device_type,
   operating_system
 )
