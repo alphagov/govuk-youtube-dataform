@@ -46,3 +46,4 @@ CAST(averageViewPercentage AS FLOAT64) AS averageViewPercentage
 FROM
  `gds-social-data.govuk_youtube_channel_staging.user_activity`
    WHERE day < '${apiDtCutOffDate}'
+   AND video_id IS NOT NULL 
