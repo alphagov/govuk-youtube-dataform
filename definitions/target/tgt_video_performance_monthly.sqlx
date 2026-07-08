@@ -9,9 +9,11 @@ config {
   tags: ["target"],
   bigquery: {
       partitionBy: "month",
+      clusterBy: ["video_month_id"],
       requirePartitionFilter:true
   },
   columns: {
+    video_month_id: "The UUID constructed by the combination of month and video_id",
     video_id: "The UUID for the video",
     month: "First day of the month the data covers (YYYY-MM-01)",
     video_title: "Title of the video from lookup (may be NULL if unmapped)",
@@ -84,6 +86,7 @@ WITH union_sources AS (
 )
 
 SELECT
+  TO_HEX(MD5(CONCAT(month, '-', video_id))) AS video_month_id,
   month,
   video_id,
   video_title,

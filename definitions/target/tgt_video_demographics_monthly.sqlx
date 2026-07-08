@@ -10,9 +10,11 @@ config {
   tags: ["target"],
   bigquery: {
       partitionBy: "month",
+      clusterBy: ["video_month_id"],
       requirePartitionFilter:true
   },
   columns: {
+    video_month_id: "The UUID created via the combination of month and video_id",
     video_id: "The UUID for the video",
     month: "First day of the month the data covers (YYYY-MM-01)",
     data_source: "Origin of the row: 'api' (pre-Dec 2025) or 'dt' (Dec 2025 onwards)",
@@ -21,7 +23,7 @@ config {
     views_percentage: "Approximate percentage of views attributed to this age/gender group"
   }
 }
-
+WITH UNION_CTE AS (
 -- Historical: API only (pre-Dec 2025)
 SELECT
   video_id,
@@ -44,4 +46,13 @@ SELECT
   AVG(views_percentage)                   AS views_percentage
 FROM ${ref("raw_p_channel_demographics_a1_govuk_tb")}
   WHERE video_id IS NOT NULL
-GROUP BY video_id, DATE_TRUNC(date, MONTH), age_group, gender
+GROUP BY video_id, DATE_TRUNC(date, MONTH), age_group, gender)
+SELECT 
+    TO_HEX(MD5(CONCAT(month, '-', video_id))) AS video_month_id,
+    video_id,
+    month,
+    data_source,
+    age_group,
+    gender, 
+    views_percentage
+FROM UNION_CTE

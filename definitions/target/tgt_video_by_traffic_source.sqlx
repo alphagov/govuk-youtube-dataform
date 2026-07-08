@@ -11,9 +11,11 @@ config {
   tags: ["target"],
   bigquery: {
       partitionBy: "date",
+      clusterBy: ["video_date_id"],
       requirePartitionFilter:true
   },
   columns: {
+    video_date_id: "The UUID created via the combination of date and video_id",
     date: "YYYY-MM-DD date of data",
     video_id: "The UUID for the video",
     data_source: "Origin of the row: 'api' (pre-Dec 2025) or 'dt' (Dec 2025 onwards)",
@@ -29,6 +31,7 @@ js {
 
 -- Historical: API only (pre-Dec 2025)
 -- traffic_source_type is an API string label (e.g. YT_SEARCH, EXT_URL)
+WITH UNION_CTE AS (
 SELECT
   api.date,
   api.video_id,
@@ -57,4 +60,14 @@ FROM ${ref("stg_dt_traffic_sources")} dt
 LEFT JOIN ${ref("lookup_traffic_source_type_mapping")} lk
   ON lk.traffic_source_type_id = dt.traffic_source_type
 WHERE dt.date >= '${apiDtCutOffDate}'
-GROUP BY dt.date, dt.video_id, dt.traffic_source_type, lk.traffic_source_type_name
+GROUP BY dt.date, dt.video_id, dt.traffic_source_type, lk.traffic_source_type_name)
+SELECT 
+    TO_HEX(MD5(CONCAT(date, '-', video_id))) AS video_date_id,
+    date,
+    video_id,
+    data_source,
+    traffic_source_type_name,
+    views,
+    engaged_views,
+    watch_time_minutes
+FROM UNION_CTE

@@ -13,6 +13,7 @@ config {
       requirePartitionFilter:true
   },
   columns: {
+    video_date_id: "The UUID created via the combination of date and video_id",
     date: "YYYY-MM-DD date of data",
     video_id: "The UUID for the video",
     video_title: "Title of the video from lookup (may be NULL if unmapped)",
