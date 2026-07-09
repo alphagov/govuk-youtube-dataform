@@ -19,7 +19,7 @@ config {
 
 SELECT
   CAST(video_id AS STRING) AS video_id,
-  CAST(second AS STRING) AS second,
+  CAST(second AS INT) AS second,
   CAST(retention_pct AS FLOAT64) AS retention_pct,
   CAST(target_date AS DATE) AS target_date,
   CAST(ingestion_timestamp AS TIMESTAMP) AS ingestion_timestamp

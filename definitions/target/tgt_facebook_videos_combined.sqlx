@@ -1,0 +1,84 @@
+-- Core daily Facebook video performance fact model. Single source (no
+-- YouTube-style union/cutoff/data_source logic — Facebook runs in parallel,
+-- not replacing another source). Grain spine is a UNION DISTINCT of
+-- (video_id, date) across all 4 contributing staging tables, since each is
+-- an independent daily snapshot pull and may not share identical coverage;
+-- this avoids silently dropping rows that a naive LEFT JOIN from
+-- stg_facebook_videos alone could miss. Reaction/insight/social-action
+-- columns are legitimately NULL where a video had no activity of that type
+-- on that date (not a data quality issue).
+config {
+  type: "table",
+  tags: ["target"],
+  bigquery: {
+    partitionBy: "date",
+    clusterBy: ["video_date_id"],
+    requirePartitionFilter: true
+  },
+  columns: {
+    video_date_id: "Surrogate key: MD5 hash of date-video_id",
+    date: "YYYY-MM-DD date of data",
+    video_id: "The Facebook video ID",
+    page_id: "The Facebook page ID that owns the video",
+    associated_post_id: "The ID of the Facebook post associated with this video",
+    title: "The title of the video (may be NULL if no metadata snapshot for this date)",
+    description: "The text description of the video",
+    created_time: "The timestamp the video was created/published",
+    length: "Duration of the video in seconds (unit inferred from observed 1.7-123s range, not confirmed against API docs)",
+    blue_reels_play_count: "Number of plays of the video as a Facebook Reel",
+    fb_reels_replay_count: "Number of replays of the video as a Facebook Reel",
+    fb_reels_total_plays: "Total plays of the video as a Facebook Reel",
+    post_impressions_unique: "Number of unique people who saw the post containing this video",
+    post_video_avg_time_watched: "Average time watched for the video (unit unconfirmed)",
+    post_video_followers: "Number of page followers who watched the video",
+    post_video_view_time: "Total time spent watching the video (unit unconfirmed)",
+    reaction_anger: "Count of 'angry' reactions on the video's reel",
+    reaction_haha: "Count of 'haha' reactions on the video's reel",
+    reaction_like: "Count of 'like' reactions on the video's reel",
+    reaction_love: "Count of 'love' reactions on the video's reel",
+    reaction_sorry: "Count of 'sorry/sad' reactions on the video's reel",
+    reaction_wow: "Count of 'wow' reactions on the video's reel",
+    comments: "Count of comments on the video's reel",
+    shares: "Count of shares of the video's reel"
+  }
+}
+
+WITH GRAIN_SPINE AS (
+  SELECT video_id, date FROM ${ref("stg_facebook_videos")}
+  UNION DISTINCT
+  SELECT video_id, date FROM ${ref("stg_facebook_video_insights")}
+  UNION DISTINCT
+  SELECT video_id, date FROM ${ref("stg_facebook_video_reel_reactions")}
+  UNION DISTINCT
+  SELECT video_id, date FROM ${ref("stg_facebook_video_reel_social_actions")}
+)
+SELECT
+  TO_HEX(MD5(CONCAT(spine.date, '-', spine.video_id))) AS video_date_id,
+  spine.date,
+  spine.video_id,
+  v.page_id,
+  v.associated_post_id,
+  v.title,
+  v.description,
+  v.created_time,
+  v.length,
+  i.blue_reels_play_count,
+  i.fb_reels_replay_count,
+  i.fb_reels_total_plays,
+  i.post_impressions_unique,
+  i.post_video_avg_time_watched,
+  i.post_video_followers,
+  i.post_video_view_time,
+  r.reaction_anger,
+  r.reaction_haha,
+  r.reaction_like,
+  r.reaction_love,
+  r.reaction_sorry,
+  r.reaction_wow,
+  sa.comments,
+  sa.shares
+FROM GRAIN_SPINE spine
+LEFT JOIN ${ref("stg_facebook_videos")} v USING (video_id, date)
+LEFT JOIN ${ref("stg_facebook_video_insights")} i USING (video_id, date)
+LEFT JOIN ${ref("stg_facebook_video_reel_reactions")} r USING (video_id, date)
+LEFT JOIN ${ref("stg_facebook_video_reel_social_actions")} sa USING (video_id, date)

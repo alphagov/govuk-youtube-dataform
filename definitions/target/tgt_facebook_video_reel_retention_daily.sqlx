@@ -1,0 +1,47 @@
+config {
+    type: "table",
+    tags: ["target"],
+    bigquery: {
+        partitionBy: "date",
+        clusterBy: ["video_date_second_id"],
+        requirePartitionFilter: true
+    },
+    columns: {
+        video_date_second_id: "Surrogate key: MD5 hash of date-video_id",
+        date: "YYYY-MM-DD date of this retention snapshot",
+        video_id: "The Facebook video ID",
+        title: "Video title (from stg_facebook_videos, may be NULL if no metadata snapshot for this date)",
+        average_retention_pct: "lifetime Average Percentage (0.0-1.0) of a video watched",
+        avg_retention_5s: "lifetime Percentage (0.0-1.0) of viewers still watching at 5 seconds",
+        avg_retention_10s: "lifetime Percentage (0.0-1.0) of viewers still watching at 10 seconds",
+        avg_retention_15s: "lifetime Percentage (0.0-1.0) of viewers still watching at 15 seconds",
+        avg_retention_20s: "lifetime Percentage (0.0-1.0) of viewers still watching at 20 seconds",
+        avg_retention_25s: "lifetime Percentage (0.0-1.0) of viewers still watching at 25 seconds",
+        avg_retention_30s: "lifetime Percentage (0.0-1.0) of viewers still watching at 30 seconds"
+    }
+}
+
+  -- Second-by-second audience retention fact model for Facebook Reels. Finer
+  -- grain than tgt_facebook_video_performance_daily (video_id, date, second)
+  -- — kept as a separate target to avoid fanning out that table's other
+  -- measures. Single source, no union/cutoff logic. title is a light join
+  -- for analyst readability only (not full video metadata).
+SELECT
+  TO_HEX(MD5(CONCAT(r.date, '-', r.video_id ))) AS video_date_id,
+  r.date,
+  r.video_id,
+  v.title,
+  r.average_retention_pct,
+  r.avg_retention_5s,
+  r.avg_retention_10s,
+  r.avg_retention_15s,
+  r.avg_retention_20s,
+  r.avg_retention_25s,
+  r.avg_retention_30s
+FROM
+  ${ref("stg_facebook_video_reel_retention")} r
+LEFT JOIN
+  ${ref("stg_facebook_videos")} v
+USING
+  (video_id,
+    date)
