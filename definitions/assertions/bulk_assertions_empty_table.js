@@ -14,7 +14,12 @@ const tablesToCheck = [
 "raw_playback_location",
 "raw_traffic_sources",
 "raw_user_activity",
-"raw_video_id_metadata_mapping"
+"raw_video_id_metadata_mapping",
+"raw_facebook_videos",
+"raw_facebook_video_insights",
+"raw_facebook_video_reel_reactions",
+"raw_facebook_video_reel_social_actions",
+"raw_facebook_video_reel_retention"
 ]
 
 tablesToCheck.forEach(tableName => {
