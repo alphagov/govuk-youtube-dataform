@@ -1,0 +1,34 @@
+
+-- Pivots the EAV-shaped facebook_video_reel_reactions raw table into one row
+-- per (video_id, date). Column names are the lowercased reaction_type values.
+config {
+  type: "table",
+  tags: ["staging"],
+  assertions: {
+    uniqueKey: ["video_id", "date"],
+    nonNull: ["video_id", "date"],
+    rowConditions: []
+  },
+  columns: {
+    video_id: "The Facebook video ID",
+    date: "YYYY-MM-DD date of this reactions snapshot",
+    reaction_anger: "Count of 'angry' reactions on the video's reel",
+    reaction_haha: "Count of 'haha' reactions on the video's reel",
+    reaction_like: "Count of 'like' reactions on the video's reel",
+    reaction_love: "Count of 'love' reactions on the video's reel",
+    reaction_sorry: "Count of 'sorry/sad' reactions on the video's reel",
+    reaction_wow: "Count of 'wow' reactions on the video's reel"
+  }
+}
+
+SELECT
+  video_id,
+  target_date AS date,
+  MAX(IF(reaction_type = 'REACTION_ANGER', count, NULL)) AS reaction_anger,
+  MAX(IF(reaction_type = 'REACTION_HAHA', count, NULL))  AS reaction_haha,
+  MAX(IF(reaction_type = 'REACTION_LIKE', count, NULL))  AS reaction_like,
+  MAX(IF(reaction_type = 'REACTION_LOVE', count, NULL))  AS reaction_love,
+  MAX(IF(reaction_type = 'REACTION_SORRY', count, NULL)) AS reaction_sorry,
+  MAX(IF(reaction_type = 'REACTION_WOW', count, NULL))   AS reaction_wow
+FROM ${ref("raw_facebook_video_reel_reactions")}
+GROUP BY video_id, target_date

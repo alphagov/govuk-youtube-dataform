@@ -1,0 +1,28 @@
+
+-- Pivots the EAV-shaped facebook_video_reel_social_actions raw table into one
+-- row per (video_id, date). Column names use plural form (comments/shares) to
+-- match existing YouTube target naming conventions, not a literal lowercase
+-- of action_type.
+config {
+  type: "table",
+  tags: ["staging"],
+  assertions: {
+    uniqueKey: ["video_id", "date"],
+    nonNull: ["video_id", "date"],
+    rowConditions: []
+  },
+  columns: {
+    video_id: "The Facebook video ID",
+    date: "YYYY-MM-DD date of this social actions snapshot",
+    comments: "Count of comments on the video's reel",
+    shares: "Count of shares of the video's reel"
+  }
+}
+
+SELECT
+  video_id,
+  target_date AS date,
+  MAX(IF(action_type = 'COMMENT', count, 0)) AS comments,
+  MAX(IF(action_type = 'SHARE', count, 0))   AS shares
+FROM ${ref("raw_facebook_video_reel_social_actions")}
+GROUP BY video_id, target_date
