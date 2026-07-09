@@ -1,0 +1,28 @@
+
+-- A table that contains the raw Facebook video reel social actions (lifetime counts, EAV shape)
+config {
+  type: "view",
+  tags: ["raw"],
+  assertions: {
+    uniqueKey: ["video_id", "target_date", "action_type"],
+    nonNull: ["video_id", "target_date", "action_type"],
+    rowConditions: []
+  },
+  columns: {
+    video_id: "The Facebook video ID",
+    action_type: "The social action type, e.g. COMMENT, SHARE",
+    count: "The number of actions of this type",
+    target_date: "YYYY-MM-DD date of this social actions snapshot",
+    ingestion_timestamp: "The timestamp this row was ingested into BigQuery"
+  }
+}
+
+SELECT
+  CAST(video_id AS STRING) AS video_id,
+  CAST(action_type AS STRING) AS action_type,
+  CAST(count AS INT64) AS count,
+  CAST(target_date AS DATE) AS target_date,
+  CAST(ingestion_timestamp AS TIMESTAMP) AS ingestion_timestamp
+FROM
+  `gds-social-data.govuk_facebook.facebook_video_reel_social_actions`
+WHERE video_id IS NOT NULL
