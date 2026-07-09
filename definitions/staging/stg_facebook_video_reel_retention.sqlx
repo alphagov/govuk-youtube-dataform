@@ -1,0 +1,26 @@
+
+-- Renames target_date -> date, casts second to INT64. Already tabular (not EAV) —
+-- no pivot needed. retention_pct is used as-is (0.0-1.0, % of viewers still
+-- watching at this second) per confirmed live sample.
+config {
+  type: "table",
+  tags: ["staging"],
+  assertions: {
+    uniqueKey: ["video_id", "date", "second"],
+    nonNull: ["video_id", "date", "second"],
+    rowConditions: []
+  },
+  columns: {
+    video_id: "The Facebook video ID",
+    date: "YYYY-MM-DD date of this retention snapshot",
+    second: "The second of playback (0-indexed, per source) this retention percentage applies to",
+    retention_pct: "Percentage (0.0-1.0) of viewers still watching at this second"
+  }
+}
+
+SELECT
+  video_id,
+  target_date AS date,
+  CAST(second AS INT64) AS second,
+  retention_pct
+FROM ${ref("raw_facebook_video_reel_retention")}

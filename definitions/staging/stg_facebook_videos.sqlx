@@ -1,0 +1,32 @@
+
+-- Renames target_date -> date and passes through the Facebook video metadata snapshot.
+config {
+  type: "table",
+  tags: ["staging"],
+  assertions: {
+    uniqueKey: ["video_id", "date"],
+    nonNull: ["video_id", "date", "page_id"],
+    rowConditions: []
+  },
+  columns: {
+    video_id: "The Facebook video ID",
+    date: "YYYY-MM-DD date of this metadata snapshot",
+    page_id: "The Facebook page ID that owns the video",
+    associated_post_id: "The ID of the Facebook post associated with this video",
+    title: "The title of the video",
+    description: "The text description of the video",
+    created_time: "The timestamp the video was created/published",
+    length: "Duration of the video in seconds (unit inferred from observed 1.7-123s range, not confirmed against API docs)"
+  }
+}
+
+SELECT
+  video_id,
+  target_date AS date,
+  page_id,
+  associated_post_id,
+  title,
+  description,
+  created_time,
+  length
+FROM ${ref("raw_facebook_videos")}
