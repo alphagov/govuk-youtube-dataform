@@ -1,11 +1,11 @@
 config {
   type: "assertion",
-  description: "Fails if required fields are NULL in tgt_facebook_video_performance_daily"
+  description: "Fails if required fields are NULL in tgt_facebook_videos_combined"
 }
 
 SELECT
   *
-FROM ${ref("tgt_facebook_video_performance_daily")}
+FROM ${ref("tgt_facebook_videos_combined")}
 WHERE (date >= DATE('1900-01-01') OR date IS NULL)
   AND (
     date IS NULL

@@ -8,6 +8,6 @@ SELECT
   COUNT(*) OVER (
     PARTITION BY date, video_id
   ) AS duplicate_count
-FROM ${ref("tgt_facebook_video_performance_daily")} t
+FROM ${ref("tgt_facebook_videos_combined")} t
 WHERE (date >= DATE('1900-01-01') OR date IS NULL)
 QUALIFY duplicate_count > 1
