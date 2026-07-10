@@ -1,0 +1,41 @@
+
+-- Pivots the EAV-shaped facebook_page_insights raw table into one row per
+-- (page_id, date), with each distinct metric as its own column, using
+-- conditional aggregation (MAX(IF(...))). Unlike video/post insights, page
+-- insight metrics have mixed periods ('day' for most, 'lifetime' for
+-- page_follows) rather than a single uniform period — each metric maps to
+-- exactly one period, so the pivot does not filter by period (filtering
+-- would incorrectly drop the 'day'-period metrics).
+config {
+  type: "table",
+  tags: ["staging"],
+  assertions: {
+    uniqueKey: ["page_id", "date"],
+    nonNull: ["page_id", "date"],
+    rowConditions: []
+  },
+  columns: {
+    page_id: "The Facebook page ID",
+    date: "YYYY-MM-DD date of this insights snapshot",
+    page_daily_follows_unique: "Number of unique users who followed the page that day",
+    page_daily_unfollows_unique: "Number of unique users who unfollowed the page that day",
+    page_follows: "Total lifetime follows of the page",
+    page_media_view: "Number of times media on the page was viewed that day",
+    page_post_engagements: "Number of engagements with the page's posts that day",
+    page_total_media_view_unique: "Number of unique users who viewed media on the page that day",
+    page_views_total: "Total number of views of the page that day"
+  }
+}
+
+SELECT
+  page_id,
+  target_date AS date,
+  MAX(IF(metric = 'page_daily_follows_unique', value, NULL))   AS page_daily_follows_unique,
+  MAX(IF(metric = 'page_daily_unfollows_unique', value, NULL)) AS page_daily_unfollows_unique,
+  MAX(IF(metric = 'page_follows', value, NULL))                AS page_follows,
+  MAX(IF(metric = 'page_media_view', value, NULL))              AS page_media_view,
+  MAX(IF(metric = 'page_post_engagements', value, NULL))        AS page_post_engagements,
+  MAX(IF(metric = 'page_total_media_view_unique', value, NULL)) AS page_total_media_view_unique,
+  MAX(IF(metric = 'page_views_total', value, NULL))              AS page_views_total
+FROM ${ref("raw_facebook_page_insights")}
+GROUP BY page_id, target_date
