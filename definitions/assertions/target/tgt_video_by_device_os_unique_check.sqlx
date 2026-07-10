@@ -6,7 +6,7 @@ config {
 SELECT
   t.*,
   COUNT(*) OVER (
-    PARTITION BY date, video_id, device_type_name, operating_system_name
+    PARTITION BY date, video_id, device_type, operating_system
   ) AS duplicate_count
 FROM ${ref("tgt_video_by_device_os")} t
 WHERE (date >= DATE('1900-01-01') OR date IS NULL)

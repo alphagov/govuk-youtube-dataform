@@ -10,8 +10,8 @@ WHERE (date >= DATE('1900-01-01') OR date IS NULL)
   AND (
     date IS NULL
     OR video_id IS NULL
-    OR device_type_name IS NULL
-    OR operating_system_name IS NULL
+    OR device_type IS NULL
+    OR operating_system IS NULL
     OR data_source IS NULL
     OR views IS NULL
   )

@@ -9,7 +9,7 @@ config {
   tags: ["target"],
   bigquery: {
       partitionBy: "date",
-      clusterBy:["video_date_id"],
+      clusterBy:["device_type","operating_system","video_id"],
       requirePartitionFilter:true
   },
   columns: {
@@ -66,8 +66,8 @@ SELECT
   video_id,
   short.long_short_format
   data_source,
-  device_type_name,
-  operating_system_name,
+  device_type_name AS device_type,
+  operating_system_name AS operating_system,
   views,
   engaged_views,
   watch_time_minutes
