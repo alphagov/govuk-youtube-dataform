@@ -1,0 +1,28 @@
+
+-- A table that contains the raw Facebook post activity (unique users per action type, EAV shape)
+config {
+  type: "view",
+  tags: ["raw"],
+  assertions: {
+    uniqueKey: ["post_id", "target_date", "action_type"],
+    nonNull: ["post_id", "target_date", "action_type"],
+    rowConditions: []
+  },
+  columns: {
+    post_id: "The Facebook post ID",
+    action_type: "The engagement action type, e.g. comment, like, share",
+    unique_users: "The number of unique users who took this action on the post",
+    target_date: "YYYY-MM-DD date of this activity snapshot",
+    ingestion_timestamp: "The timestamp this row was ingested into BigQuery"
+  }
+}
+
+SELECT
+  CAST(post_id AS STRING) AS post_id,
+  CAST(action_type AS STRING) AS action_type,
+  CAST(unique_users AS INT64) AS unique_users,
+  CAST(target_date AS DATE) AS target_date,
+  CAST(ingestion_timestamp AS TIMESTAMP) AS ingestion_timestamp
+FROM
+  `gds-social-data.govuk_facebook.facebook_post_activity`
+WHERE post_id IS NOT NULL

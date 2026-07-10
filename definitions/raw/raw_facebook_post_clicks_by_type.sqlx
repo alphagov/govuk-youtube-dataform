@@ -1,0 +1,28 @@
+
+-- A table that contains the raw Facebook post clicks broken down by click type (EAV shape)
+config {
+  type: "view",
+  tags: ["raw"],
+  assertions: {
+    uniqueKey: ["post_id", "target_date", "click_type"],
+    nonNull: ["post_id", "target_date", "click_type"],
+    rowConditions: []
+  },
+  columns: {
+    post_id: "The Facebook post ID",
+    click_type: "The type of click, e.g. link clicks, other clicks, photo view",
+    clicks: "The number of clicks of this type",
+    target_date: "YYYY-MM-DD date of this clicks snapshot",
+    ingestion_timestamp: "The timestamp this row was ingested into BigQuery"
+  }
+}
+
+SELECT
+  CAST(post_id AS STRING) AS post_id,
+  CAST(click_type AS STRING) AS click_type,
+  CAST(clicks AS INT64) AS clicks,
+  CAST(target_date AS DATE) AS target_date,
+  CAST(ingestion_timestamp AS TIMESTAMP) AS ingestion_timestamp
+FROM
+  `gds-social-data.govuk_facebook.facebook_post_clicks_by_type`
+WHERE post_id IS NOT NULL

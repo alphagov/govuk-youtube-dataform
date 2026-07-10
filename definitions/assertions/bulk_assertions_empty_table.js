@@ -19,7 +19,14 @@ const tablesToCheck = [
 "raw_facebook_video_insights",
 "raw_facebook_video_reel_reactions",
 "raw_facebook_video_reel_social_actions",
-"raw_facebook_video_reel_retention"
+"raw_facebook_video_reel_retention",
+"raw_facebook_page_info",
+"raw_facebook_page_insights",
+"raw_facebook_posts",
+"raw_facebook_post_activity",
+"raw_facebook_post_clicks_by_type",
+"raw_facebook_post_insights",
+"raw_facebook_post_reactions"
 ]
 
 tablesToCheck.forEach(tableName => {

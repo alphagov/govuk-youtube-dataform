@@ -1,0 +1,36 @@
+
+-- A table that contains the raw Facebook post reaction totals (already tabular, not EAV)
+config {
+  type: "view",
+  tags: ["raw"],
+  assertions: {
+    uniqueKey: ["post_id", "target_date"],
+    nonNull: ["post_id", "target_date"],
+    rowConditions: []
+  },
+  columns: {
+    post_id: "The Facebook post ID",
+    like: "Count of 'like' reactions on the post",
+    love: "Count of 'love' reactions on the post",
+    wow: "Count of 'wow' reactions on the post",
+    haha: "Count of 'haha' reactions on the post",
+    sad: "Count of 'sad' reactions on the post",
+    angry: "Count of 'angry' reactions on the post",
+    target_date: "YYYY-MM-DD date of this reactions snapshot",
+    ingestion_timestamp: "The timestamp this row was ingested into BigQuery"
+  }
+}
+
+SELECT
+  CAST(post_id AS STRING) AS post_id,
+  CAST(`like` AS INT64) AS `like`,
+  CAST(love AS INT64) AS love,
+  CAST(wow AS INT64) AS wow,
+  CAST(haha AS INT64) AS haha,
+  CAST(sad AS INT64) AS sad,
+  CAST(angry AS INT64) AS angry,
+  CAST(target_date AS DATE) AS target_date,
+  CAST(ingestion_timestamp AS TIMESTAMP) AS ingestion_timestamp
+FROM
+  `gds-social-data.govuk_facebook.facebook_post_reactions`
+WHERE post_id IS NOT NULL

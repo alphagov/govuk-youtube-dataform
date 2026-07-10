@@ -1,0 +1,32 @@
+
+-- A table that contains the raw Facebook page metadata snapshot (one row per page per day)
+config {
+  type: "view",
+  tags: ["raw"],
+  assertions: {
+    uniqueKey: ["page_id", "target_date"],
+    nonNull: ["page_id", "target_date"],
+    rowConditions: []
+  },
+  columns: {
+    page_id: "The Facebook page ID",
+    name: "The name of the page",
+    fan_count: "The number of people who like the page",
+    followers_count: "The number of people who follow the page",
+    talking_about_count: "The number of people talking about the page",
+    target_date: "YYYY-MM-DD date of this metadata snapshot",
+    ingestion_timestamp: "The timestamp this row was ingested into BigQuery"
+  }
+}
+
+SELECT
+  CAST(page_id AS STRING) AS page_id,
+  CAST(name AS STRING) AS name,
+  CAST(fan_count AS INT64) AS fan_count,
+  CAST(followers_count AS INT64) AS followers_count,
+  CAST(talking_about_count AS INT64) AS talking_about_count,
+  CAST(target_date AS DATE) AS target_date,
+  CAST(ingestion_timestamp AS TIMESTAMP) AS ingestion_timestamp
+FROM
+  `gds-social-data.govuk_facebook.facebook_page_info`
+WHERE page_id IS NOT NULL
