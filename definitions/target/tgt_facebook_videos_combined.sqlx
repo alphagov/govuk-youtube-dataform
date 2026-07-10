@@ -34,19 +34,28 @@ config {
   }
 }
 
-WITH COMBINED_VIDEOS AS 
-  (
-    SELECT video_id, date FROM ${ref("stg_facebook_videos")}
-    UNION DISTINCT
-    SELECT video_id, date FROM ${ref("stg_facebook_video_insights")}
-  ),
+WITH COMBINED_VIDEOS AS (
+  SELECT video_id, date FROM ${ref("stg_facebook_videos")}
+  UNION DISTINCT
+  SELECT video_id, date FROM ${ref("stg_facebook_video_insights")}
+),
+REEL_VIDEO_IDS AS (
+  SELECT DISTINCT video_id FROM ${ref("stg_facebook_video_reel_reactions")}
+  UNION DISTINCT
+  SELECT video_id FROM ${ref("stg_facebook_video_reel_retention")}
+  UNION DISTINCT
+  SELECT video_id FROM ${ref("stg_facebook_video_reel_social_actions")}
+),
 /* removing the reel IDs as they do not turn any values from the video_insights edgs */
 GRAIN_SPINE AS (
-  SELECT * FROM COMBINED_VIDEOS
-  WHERE video_id NOT IN (SELECT video_id FROM ${ref("stg_facebook_video_reel_reactions")})
-    AND video_id NOT IN (SELECT video_id FROM ${ref("stg_facebook_video_reel_retention")})
-    AND video_id NOT IN (SELECT video_id FROM ${ref("stg_facebook_video_reel_social_actions")})
-    )
+  SELECT cv.*
+  FROM COMBINED_VIDEOS cv
+  WHERE NOT EXISTS (
+    SELECT 1
+    FROM REEL_VIDEO_IDS r
+    WHERE r.video_id = cv.video_id
+  )
+)
 SELECT
   TO_HEX(MD5(CONCAT(spine.date, '-', spine.video_id))) AS video_date_id,
   spine.date,
