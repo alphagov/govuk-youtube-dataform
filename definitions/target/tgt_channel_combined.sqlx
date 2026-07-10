@@ -3,7 +3,7 @@ config {
     tags: ["target"],
     bigquery: {
         partitionBy: "date",
-        clusterBy: ["video_date_id"],
+        clusterBy: ["video_id"],
         requirePartitionFilter:true
     },
     columns: {

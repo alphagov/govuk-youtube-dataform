@@ -11,7 +11,7 @@ config {
   tags: ["target"],
   bigquery: {
       partitionBy: "date",
-      clusterBy: ["video_date_id"],
+      clusterBy: ["traffic_source_type_name","video_id"],
       requirePartitionFilter:true
   },
   columns: {

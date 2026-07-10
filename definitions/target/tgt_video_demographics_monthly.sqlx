@@ -10,7 +10,7 @@ config {
   tags: ["target"],
   bigquery: {
       partitionBy: "month",
-      clusterBy: ["video_month_id"],
+      clusterBy: ["gender","age_group","video_id"],
       requirePartitionFilter:true
   },
   columns: {
