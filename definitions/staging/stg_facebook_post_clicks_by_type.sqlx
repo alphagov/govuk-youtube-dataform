@@ -1,0 +1,28 @@
+
+-- Pivots the EAV-shaped facebook_post_clicks_by_type raw table into one row
+-- per (post_id, date), with each click_type as its own column.
+config {
+  type: "table",
+  tags: ["staging"],
+  assertions: {
+    uniqueKey: ["post_id", "date"],
+    nonNull: ["post_id", "date"],
+    rowConditions: []
+  },
+  columns: {
+    post_id: "The Facebook post ID",
+    date: "YYYY-MM-DD date of this clicks snapshot",
+    clicks_link: "Number of link clicks on the post",
+    clicks_other: "Number of other clicks on the post",
+    clicks_photo_view: "Number of photo view clicks on the post"
+  }
+}
+
+SELECT
+  post_id,
+  target_date AS date,
+  MAX(IF(click_type = 'link clicks', clicks, NULL))  AS clicks_link,
+  MAX(IF(click_type = 'other clicks', clicks, NULL)) AS clicks_other,
+  MAX(IF(click_type = 'photo view', clicks, NULL))   AS clicks_photo_view
+FROM ${ref("raw_facebook_post_clicks_by_type")}
+GROUP BY post_id, target_date

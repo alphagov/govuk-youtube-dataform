@@ -1,0 +1,36 @@
+
+-- Renames target_date -> date, prefixes reaction columns with reaction_.
+-- Already tabular (not EAV) — no pivot needed. Raw field names (like, love,
+-- wow, haha, sad, angry) are kept as-is rather than forced to match the
+-- video-Reel reactions table's naming (reaction_anger, reaction_sorry) —
+-- posts and Reels genuinely use different source vocabularies.
+config {
+  type: "table",
+  tags: ["staging"],
+  assertions: {
+    uniqueKey: ["post_id", "date"],
+    nonNull: ["post_id", "date"],
+    rowConditions: []
+  },
+  columns: {
+    post_id: "The Facebook post ID",
+    date: "YYYY-MM-DD date of this reactions snapshot",
+    reaction_like: "Count of 'like' reactions on the post",
+    reaction_love: "Count of 'love' reactions on the post",
+    reaction_wow: "Count of 'wow' reactions on the post",
+    reaction_haha: "Count of 'haha' reactions on the post",
+    reaction_sad: "Count of 'sad' reactions on the post",
+    reaction_angry: "Count of 'angry' reactions on the post"
+  }
+}
+
+SELECT
+  post_id,
+  target_date AS date,
+  `like` AS reaction_like,
+  love AS reaction_love,
+  wow AS reaction_wow,
+  haha AS reaction_haha,
+  sad AS reaction_sad,
+  angry AS reaction_angry
+FROM ${ref("raw_facebook_post_reactions")}

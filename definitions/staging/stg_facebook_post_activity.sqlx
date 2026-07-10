@@ -1,0 +1,30 @@
+
+-- Pivots the EAV-shaped facebook_post_activity raw table into one row per
+-- (post_id, date). Columns are prefixed unique_users_ since this table
+-- counts distinct users taking each action, not total reaction counts
+-- (which live separately in stg_facebook_post_reactions).
+config {
+  type: "table",
+  tags: ["staging"],
+  assertions: {
+    uniqueKey: ["post_id", "date"],
+    nonNull: ["post_id", "date"],
+    rowConditions: []
+  },
+  columns: {
+    post_id: "The Facebook post ID",
+    date: "YYYY-MM-DD date of this activity snapshot",
+    unique_users_comment: "Number of unique users who commented on the post",
+    unique_users_like: "Number of unique users who liked the post",
+    unique_users_share: "Number of unique users who shared the post"
+  }
+}
+
+SELECT
+  post_id,
+  target_date AS date,
+  MAX(IF(action_type = 'comment', unique_users, NULL)) AS unique_users_comment,
+  MAX(IF(action_type = 'like', unique_users, NULL))    AS unique_users_like,
+  MAX(IF(action_type = 'share', unique_users, NULL))   AS unique_users_share
+FROM ${ref("raw_facebook_post_activity")}
+GROUP BY post_id, target_date
