@@ -8,11 +8,8 @@ config {
   tags: ["target"],
   bigquery: {
       partitionBy: "date",
+      clusterBy: ["country_code","video_id"],
       requirePartitionFilter:true
-  },
-  assertions: {
-    uniqueKey: ["date", "video_id", "country_code"],
-    nonNull: ["date", "video_id", "country_code", "data_source", "views"]
   },
   columns: {
     date: "YYYY-MM-DD date of data",
@@ -35,6 +32,7 @@ js {
 }
 
 SELECT
+  TO_HEX(MD5(CONCAT(date, '-', video_id))) AS video_date_id,
   dt.date,
   dt.video_id,
   'dt'                                   AS data_source,

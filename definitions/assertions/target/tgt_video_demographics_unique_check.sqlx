@@ -1,0 +1,13 @@
+config {
+  type: "assertion",
+  description: "Fails if duplicate rows exist for (date, video_id, age_group, gender)"
+}
+
+SELECT
+  t.*,
+  COUNT(*) OVER (
+    PARTITION BY date, video_id, age_group, gender
+  ) AS duplicate_count
+FROM ${ref("tgt_video_demographics")} t
+WHERE (date >= DATE('1900-01-01') OR date IS NULL)
+QUALIFY duplicate_count > 1

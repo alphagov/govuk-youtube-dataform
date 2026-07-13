@@ -7,15 +7,13 @@
 config {
   type: "table",
   tags: ["target"],
-  assertions: {
-    uniqueKey: ["date", "video_id", "device_type_name", "operating_system_name"],
-    nonNull: ["date", "video_id", "device_type_name", "operating_system_name", "data_source", "views"]
-  },
   bigquery: {
       partitionBy: "date",
+      clusterBy:["device_type","operating_system","video_id"],
       requirePartitionFilter:true
   },
   columns: {
+    video_date_id: "The UUID created via the combination of date and video_id",
     date: "YYYY-MM-DD date of data",
     video_id: "The UUID for the video",
     data_source: "Origin of the row: 'api' (pre-Dec 2025) or 'dt' (Dec 2025 onwards)",
@@ -63,12 +61,13 @@ GROUP BY dt.date, dt.video_id, dt.device_type_name, dt.operating_system_name
 )
 
 SELECT
+  TO_HEX(MD5(CONCAT(date, '-', video_id))) AS video_date_id,
   date,
   video_id,
   short.long_short_format
   data_source,
-  device_type_name,
-  operating_system_name,
+  device_type_name AS device_type,
+  operating_system_name AS operating_system,
   views,
   engaged_views,
   watch_time_minutes

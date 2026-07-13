@@ -59,3 +59,4 @@ SELECT
   CAST(embeddable AS STRING) AS embeddable
 FROM
   `gds-social-data.govuk_youtube_channel_staging.video_id_metadata_mapping`
+  WHERE video_id IS NOT NULL 

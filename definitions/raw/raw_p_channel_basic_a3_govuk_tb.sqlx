@@ -57,3 +57,4 @@ SELECT
     FROM
  `gds-social-data.govuk_youtube_channel.p_channel_basic_a3_govuk_tb`
   WHERE PARSE_DATE('%Y%m%d', date) >= '${apiDtCutOffDate}'
+  AND video_id IS NOT NULL 

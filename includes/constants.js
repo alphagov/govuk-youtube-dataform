@@ -1,3 +1,3 @@
-const apiDtCutOffDate = '2026-01-01';
+const apiDtCutOffDate = '2026-03-01';
 
 module.exports = { apiDtCutOffDate };

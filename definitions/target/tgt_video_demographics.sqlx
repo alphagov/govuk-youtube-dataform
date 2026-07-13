@@ -11,13 +11,11 @@ config {
   tags: ["target"],
   bigquery: {
       partitionBy: "date",
+      clusterBy: ["gender","age_group","video_id"],
       requirePartitionFilter:true
   },
-  assertions: {
-    uniqueKey: ["date", "video_id", "age_group", "gender"],
-    nonNull: ["date", "video_id", "age_group", "gender", "data_source"]
-  },
   columns: {
+    video_date_id: "The UUID created via the combination of date and video_id",
     date: "YYYY-MM-DD date of data",
     video_id: "The UUID for the video",
     data_source: "Origin of the row: always 'dt' (DT only from Dec 2025)",
@@ -28,6 +26,7 @@ config {
 }
 
 SELECT
+    TO_HEX(MD5(CONCAT(date, '-', video_id))) AS video_date_id,
   date,
   video_id,
   'dt'                                   AS data_source,

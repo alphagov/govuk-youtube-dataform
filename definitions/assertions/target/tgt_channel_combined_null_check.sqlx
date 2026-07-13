@@ -1,0 +1,20 @@
+config {
+  type: "assertion",
+  description: "Fails if required fields are NULL in tgt_channel_combined"
+}
+
+SELECT
+  *
+FROM ${ref("tgt_channel_combined")}
+WHERE (date >= DATE('1900-01-01') OR date IS NULL)
+  AND (
+    date IS NULL
+    OR channel_id IS NULL
+    OR video_id IS NULL
+    OR live_or_on_demand IS NULL
+    OR subscribed_status IS NULL
+    OR playback_location IS NULL
+    OR traffic_source IS NULL
+    OR device_type IS NULL
+    OR operating_system IS NULL
+  )
