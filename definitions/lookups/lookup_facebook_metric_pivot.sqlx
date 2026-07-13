@@ -1,0 +1,35 @@
+-- This lookup showings the mapping for pivoting the facebook page insights column, 
+-- which is returned from the meta api as a long table with the metric column and value column.
+config {
+  type: "table",
+  assertions: {
+    uniqueKey: ["source_table", "output_column_name"],
+    nonNull: ["source_table", "metric_column_name", "metric_clause", "value_column_name", "output_column_name"]
+  },
+  columns: {
+    source_table: "The staging model this pivot mapping applies to (e.g. 'page_insights')",
+    metric_column_name: "The EAV column in the raw table whose value identifies the metric (e.g. 'metric')",
+    metric_clause: "The literal value of metric_column_name that identifies this metric in the raw data",
+    value_column_name: "The column in the raw table holding the metric's value (e.g. 'value')",
+    output_column_name: "The canonical pivoted column name produced in the staging model"
+  }
+}
+
+SELECT *
+FROM UNNEST(
+  ARRAY<STRUCT<
+    source_table        STRING,
+    metric_column_name  STRING,
+    metric_clause       STRING,
+    value_column_name   STRING,
+    output_column_name  STRING
+  >>[
+    ('page_insights', 'metric', 'page_daily_follows_unique',     'value', 'page_daily_follows_unique'),
+    ('page_insights', 'metric', 'page_daily_unfollows_unique',   'value', 'page_daily_unfollows_unique'),
+    ('page_insights', 'metric', 'page_follows',                  'value', 'page_follows'),
+    ('page_insights', 'metric', 'page_media_view',               'value', 'page_media_view'),
+    ('page_insights', 'metric', 'page_post_engagements',         'value', 'page_post_engagements'),
+    ('page_insights', 'metric', 'page_total_media_view_unique',  'value', 'page_total_media_view_unique'),
+    ('page_insights', 'metric', 'page_views_total',              'value', 'page_views_total')
+  ]
+)
