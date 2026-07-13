@@ -10,7 +10,7 @@ config {
   tags: ["target","facebook"],
   bigquery: {
     partitionBy: "date",
-    clusterBy: ["page_date_id"],
+    clusterBy: ["page_id"],
     requirePartitionFilter: true
   },
   columns: {

@@ -11,7 +11,7 @@ config {
   tags: ["target","facebook"],
   bigquery: {
     partitionBy: "date",
-    clusterBy: ["post_date_id"],
+    clusterBy: ["post_type","post_id"],
     requirePartitionFilter: true
   },
   columns: {
