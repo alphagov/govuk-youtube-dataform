@@ -27,10 +27,10 @@ config {
     description: "The text description of the video",
     created_time: "The timestamp the video was created/published",
     length: "Duration of the video in seconds (unit inferred from observed 1.7-123s range, not confirmed against API docs)",
-    post_impressions_unique: "Number of unique people who saw the post containing this video",
-    post_video_avg_time_watched: "Average time watched for the video (unit unconfirmed)",
-    post_video_followers: "Number of page followers who watched the video",
-    post_video_view_time: "Total time spent watching the video (unit unconfirmed)"
+    post_impressions_unique: "Number of unique people who saw the post containing this video, lifetime value",
+    post_video_avg_time_watched: "Average time watched for the video (unit unconfirmed), lifetime value",
+    post_video_followers: "Number of page followers who watched the video, lifetime value",
+    post_video_view_time: "Total time spent watching the video, lifetime value"
   }
 }
 
