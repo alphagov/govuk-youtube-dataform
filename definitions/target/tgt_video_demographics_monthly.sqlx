@@ -7,7 +7,7 @@
 -- Note: API demographics were unavailable from 16/03/2026 onwards due to an outage (issue: 488961396).
 config {
   type: "table",
-  tags: ["target"],
+  tags: ["target","youtube"],
   bigquery: {
       partitionBy: "month",
       clusterBy: ["gender","age_group","video_id"],

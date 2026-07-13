@@ -7,7 +7,7 @@
 -- wasn't reported for that page/date (not a data quality issue).
 config {
   type: "table",
-  tags: ["target"],
+  tags: ["target","facebook"],
   bigquery: {
     partitionBy: "date",
     clusterBy: ["page_date_id"],

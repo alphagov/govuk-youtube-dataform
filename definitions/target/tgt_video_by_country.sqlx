@@ -5,7 +5,7 @@
 -- live_or_on_demand and subscribed_status sub-dimensions.
 config {
   type: "table",
-  tags: ["target"],
+  tags: ["target","youtube"],
   bigquery: {
       partitionBy: "date",
       clusterBy: ["country_code","video_id"],

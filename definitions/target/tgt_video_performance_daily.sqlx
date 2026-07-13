@@ -6,7 +6,7 @@
 -- aggregated across sub-dimensions.
 config {
   type: "table",
-  tags: ["target"],
+  tags: ["target","youtube"],
   bigquery: {
       partitionBy: "date",
       clusterBy: ["long_short_format","video_id"],

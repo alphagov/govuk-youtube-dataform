@@ -8,7 +8,7 @@
 -- post had no activity of that type on that date (not a data quality issue).
 config {
   type: "table",
-  tags: ["target"],
+  tags: ["target","facebook"],
   bigquery: {
     partitionBy: "date",
     clusterBy: ["post_date_id"],
