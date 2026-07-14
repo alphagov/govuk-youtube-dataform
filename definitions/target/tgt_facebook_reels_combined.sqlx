@@ -38,7 +38,7 @@ config {
     reaction_wow: "Count of 'wow' reactions on the video's reel,, lifetime value",
     comments: "Count of comments on the video's reel, lifetime value",
     shares: "Count of shares of the video's reel, lifetime value",
-    average_retention_pct: "Average percentage (0.0-1.0) of the video watched, across all seconds, lifetime value" 
+    average_retention_pct: "Average percentage (0.0-1.0) of the video watched, across all seconds, lifetime value",
     avg_retention_5s: "Percentage (0.0-1.0) of viewers still watching at 5 seconds, lifetime value",
     avg_retention_10s: "Percentage (0.0-1.0) of viewers still watching at 10 seconds, lifetime value",
     avg_retention_15s: "Percentage (0.0-1.0) of viewers still watching at 15 seconds, lifetime value",

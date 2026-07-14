@@ -29,6 +29,6 @@ SELECT
   MAX(IF(reaction_type = 'REACTION_LIKE', count, NULL))  AS reaction_like,
   MAX(IF(reaction_type = 'REACTION_LOVE', count, NULL))  AS reaction_love,
   MAX(IF(reaction_type = 'REACTION_SORRY', count, NULL)) AS reaction_sorry,
-  MAX(IF(reaction_type = 'REACTION_WOW', count, NULLt p))   AS reaction_wow
+  MAX(IF(reaction_type = 'REACTION_WOW', count, NULL))      AS reaction_wow
 FROM ${ref("raw_facebook_video_reel_reactions")}
 GROUP BY video_id, target_date
