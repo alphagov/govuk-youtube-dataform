@@ -27,15 +27,19 @@ config {
   }
 }
 
+js {
+  const { maxIfConditionValueNotNull } = require('includes/utils');
+  const { stagingAlwaysNullChecks } = require('includes/constants');
+  const pageInsightsColumns = stagingAlwaysNullChecks.find(
+    check => check.table === 'stg_facebook_page_insights'
+  ).columns;
+}
+
 SELECT
   page_id,
   target_date AS date,
-  MAX(IF(metric = 'page_daily_follows_unique', value, NULL))   AS page_daily_follows_unique,
-  MAX(IF(metric = 'page_daily_unfollows_unique', value, NULL)) AS page_daily_unfollows_unique,
-  MAX(IF(metric = 'page_follows', value, NULL))                AS page_follows,
-  MAX(IF(metric = 'page_media_view', value, NULL))              AS page_media_view,
-  MAX(IF(metric = 'page_post_engagements', value, NULL))        AS page_post_engagements,
-  MAX(IF(metric = 'page_total_media_view_unique', value, NULL)) AS page_total_media_view_unique,
-  MAX(IF(metric = 'page_views_total', value, NULL))              AS page_views_total
+  ${pageInsightsColumns.map(
+    column => maxIfConditionValueNotNull('metric', column, 'value')
+  ).join(',\n  ')}
 FROM ${ref("raw_facebook_page_insights")}
 GROUP BY page_id, target_date

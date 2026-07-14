@@ -21,14 +21,19 @@ config {
   }
 }
 
+js {
+  const { maxIfConditionValueNotNull } = require('includes/utils');
+  const { stagingAlwaysNullChecks } = require('includes/constants');
+  const reactionColumns = stagingAlwaysNullChecks.find(
+    check => check.table === 'stg_facebook_video_reel_reactions'
+  ).columns;
+}
+
 SELECT
   video_id,
   target_date AS date,
-  MAX(IF(reaction_type = 'REACTION_ANGER', count, NULL)) AS reaction_anger,
-  MAX(IF(reaction_type = 'REACTION_HAHA', count, NULL))  AS reaction_haha,
-  MAX(IF(reaction_type = 'REACTION_LIKE', count, NULL))  AS reaction_like,
-  MAX(IF(reaction_type = 'REACTION_LOVE', count, NULL))  AS reaction_love,
-  MAX(IF(reaction_type = 'REACTION_SORRY', count, NULL)) AS reaction_sorry,
-  MAX(IF(reaction_type = 'REACTION_WOW', count, NULL))      AS reaction_wow
+  ${reactionColumns.map(
+    column => maxIfConditionValueNotNull('reaction_type', column.toUpperCase(), 'count', column)
+  ).join(',\n  ')}
 FROM ${ref("raw_facebook_video_reel_reactions")}
 GROUP BY video_id, target_date

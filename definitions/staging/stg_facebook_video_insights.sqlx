@@ -25,16 +25,20 @@ config {
   }
 }
 
+js {
+  const { maxIfConditionValueNotNull } = require('includes/utils');
+  const { stagingAlwaysNullChecks } = require('includes/constants');
+  const videoInsightsColumns = stagingAlwaysNullChecks.find(
+    check => check.table === 'stg_facebook_video_insights'
+  ).columns;
+}
+
 SELECT
   video_id,
   target_date AS date,
-  MAX(IF(metric = 'blue_reels_play_count', value, NULL))       AS blue_reels_play_count,
-  MAX(IF(metric = 'fb_reels_replay_count', value, NULL))       AS fb_reels_replay_count,
-  MAX(IF(metric = 'fb_reels_total_plays', value, NULL))        AS fb_reels_total_plays,
-  MAX(IF(metric = 'post_impressions_unique', value, NULL))     AS post_impressions_unique,
-  MAX(IF(metric = 'post_video_avg_time_watched', value, NULL)) AS post_video_avg_time_watched,
-  MAX(IF(metric = 'post_video_followers', value, NULL))        AS post_video_followers,
-  MAX(IF(metric = 'post_video_view_time', value, NULL))        AS post_video_view_time
+  ${videoInsightsColumns.map(
+    column => maxIfConditionValueNotNull('metric', column, 'value')
+  ).join(',\n  ')}
 FROM ${ref("raw_facebook_video_insights")}
 WHERE period = 'lifetime'
 GROUP BY video_id, target_date

@@ -19,10 +19,24 @@ config {
   }
 }
 
+js {
+  const { maxIfConditionValueNotNull } = require('includes/utils');
+  const { stagingAlwaysNullChecks } = require('includes/constants');
+  const socialActionColumns = stagingAlwaysNullChecks.find(
+    check => check.table === 'stg_facebook_video_reel_social_actions'
+  ).columns;
+  // action_type values don't map to column names by a fixed rule, so they're spelled out here.
+  const actionTypeByColumn = {
+    comments: 'COMMENT',
+    shares: 'SHARE'
+  };
+}
+
 SELECT
   video_id,
   target_date AS date,
-  MAX(IF(action_type = 'COMMENT', count, NULL)) AS comments,
-  MAX(IF(action_type = 'SHARE', count, NULL))   AS shares
+  ${socialActionColumns.map(
+    column => maxIfConditionValueNotNull('action_type', actionTypeByColumn[column], 'count', column)
+  ).join(',\n  ')}
 FROM ${ref("raw_facebook_video_reel_social_actions")}
 GROUP BY video_id, target_date

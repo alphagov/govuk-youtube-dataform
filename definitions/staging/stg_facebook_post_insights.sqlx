@@ -20,12 +20,20 @@ config {
   }
 }
 
+js {
+  const { maxIfConditionValueNotNull } = require('includes/utils');
+  const { stagingAlwaysNullChecks } = require('includes/constants');
+  const postInsightsColumns = stagingAlwaysNullChecks.find(
+    check => check.table === 'stg_facebook_post_insights'
+  ).columns;
+}
+
 SELECT
   post_id,
   target_date AS date,
-  MAX(IF(metric = 'post_clicks', value, NULL))                  AS post_clicks,
-  MAX(IF(metric = 'post_media_view', value, NULL))               AS post_media_view,
-  MAX(IF(metric = 'post_total_media_view_unique', value, NULL))  AS post_total_media_view_unique
+  ${postInsightsColumns.map(
+    column => maxIfConditionValueNotNull('metric', column, 'value')
+  ).join(',\n  ')}
 FROM ${ref("raw_facebook_post_insights")}
 WHERE period = 'lifetime'
 GROUP BY post_id, target_date

@@ -20,11 +20,19 @@ config {
   }
 }
 
+js {
+  const { maxIfConditionValueNotNull } = require('includes/utils');
+  const { stagingAlwaysNullChecks } = require('includes/constants');
+  const postActivityColumns = stagingAlwaysNullChecks.find(
+    check => check.table === 'stg_facebook_post_activity'
+  ).columns;
+}
+
 SELECT
   post_id,
   target_date AS date,
-  MAX(IF(action_type = 'comment', unique_users, NULL)) AS unique_users_comment,
-  MAX(IF(action_type = 'like', unique_users, NULL))    AS unique_users_like,
-  MAX(IF(action_type = 'share', unique_users, NULL))   AS unique_users_share
+  ${postActivityColumns.map(
+    column => maxIfConditionValueNotNull('action_type', column.replace('unique_users_', ''), 'unique_users', column)
+  ).join(',\n  ')}
 FROM ${ref("raw_facebook_post_activity")}
 GROUP BY post_id, target_date

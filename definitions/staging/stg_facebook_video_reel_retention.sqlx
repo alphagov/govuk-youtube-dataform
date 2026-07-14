@@ -26,15 +26,22 @@ config {
   }
 }
 
+js {
+  const { maxIfConditionValueNotNull } = require('includes/utils');
+  const { stagingAlwaysNullChecks } = require('includes/constants');
+  // average_retention_pct isn't a per-second pivot column, so it's excluded here
+  // and selected separately below.
+  const retentionSecondColumns = stagingAlwaysNullChecks.find(
+    check => check.table === 'stg_facebook_video_reel_retention'
+  ).columns.filter(column => column !== 'average_retention_pct');
+}
+
 SELECT
   video_id,
   target_date AS date,
-  AVG(retention_pct)                              AS average_retention_pct,
-  MAX(IF(second = 5, retention_pct, NULL))         AS avg_retention_5s,
-  MAX(IF(second = 10, retention_pct, NULL))        AS avg_retention_10s,
-  MAX(IF(second = 15, retention_pct, NULL))        AS avg_retention_15s,
-  MAX(IF(second = 20, retention_pct, NULL))        AS avg_retention_20s,
-  MAX(IF(second = 25, retention_pct, NULL))        AS avg_retention_25s,
-  MAX(IF(second = 30, retention_pct, NULL))        AS avg_retention_30s
+  AVG(retention_pct) AS average_retention_pct,
+  ${retentionSecondColumns.map(
+    column => maxIfConditionValueNotNull('second', Number(column.match(/\d+/)[0]), 'retention_pct', column)
+  ).join(',\n  ')}
 FROM ${ref("raw_facebook_video_reel_retention")}
 GROUP BY video_id, target_date

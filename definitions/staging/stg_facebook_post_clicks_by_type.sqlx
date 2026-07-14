@@ -18,11 +18,25 @@ config {
   }
 }
 
+js {
+  const { maxIfConditionValueNotNull } = require('includes/utils');
+  const { stagingAlwaysNullChecks } = require('includes/constants');
+  const postClicksColumns = stagingAlwaysNullChecks.find(
+    check => check.table === 'stg_facebook_post_clicks_by_type'
+  ).columns;
+  // click_type values don't map to column names by a fixed rule, so they're spelled out here.
+  const clickTypeByColumn = {
+    clicks_link: 'link clicks',
+    clicks_other: 'other clicks',
+    clicks_photo_view: 'photo view'
+  };
+}
+
 SELECT
   post_id,
   target_date AS date,
-  MAX(IF(click_type = 'link clicks', clicks, NULL))  AS clicks_link,
-  MAX(IF(click_type = 'other clicks', clicks, NULL)) AS clicks_other,
-  MAX(IF(click_type = 'photo view', clicks, NULL))   AS clicks_photo_view
+  ${postClicksColumns.map(
+    column => maxIfConditionValueNotNull('click_type', clickTypeByColumn[column], 'clicks', column)
+  ).join(',\n  ')}
 FROM ${ref("raw_facebook_post_clicks_by_type")}
 GROUP BY post_id, target_date
