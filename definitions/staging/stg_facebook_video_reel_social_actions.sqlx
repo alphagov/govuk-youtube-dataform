@@ -22,7 +22,7 @@ config {
 SELECT
   video_id,
   target_date AS date,
-  MAX(IF(action_type = 'COMMENT', count, 0)) AS comments,
-  MAX(IF(action_type = 'SHARE', count, 0))   AS shares
+  MAX(IF(action_type = 'COMMENT', count, NULL)) AS comments,
+  MAX(IF(action_type = 'SHARE', count, NULL))   AS shares
 FROM ${ref("raw_facebook_video_reel_social_actions")}
 GROUP BY video_id, target_date
