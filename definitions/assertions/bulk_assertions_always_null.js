@@ -16,7 +16,9 @@ function alwaysNullAssertion(check) {
         FROM ${ctx.ref(table)}
         WHERE ${dateColumn} >= DATE_SUB(CURRENT_DATE(), ${windowInterval})
       )
-      SELECT column_name, non_null_count, total_rows
+      SELECT column_name, 
+      non_null_count as valid_row_count,
+      total_rows
       FROM counts
       UNPIVOT(non_null_count FOR column_name IN (${columns.join(', ')}))
       WHERE total_rows > 0 AND non_null_count = 0
