@@ -6,7 +6,7 @@
 -- as they cannot be reliably aggregated across sub-dimensions or across days within a month.
 config {
   type: "table",
-  tags: ["target"],
+  tags: ["target","youtube"],
   bigquery: {
       partitionBy: "month",
       clusterBy: ["video_id"],

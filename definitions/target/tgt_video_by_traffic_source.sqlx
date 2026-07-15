@@ -8,7 +8,7 @@
 -- DT rows are aggregated to (date, video_id, traffic_source_type) grain.
 config {
   type: "table",
-  tags: ["target"],
+  tags: ["target","youtube"],
   bigquery: {
       partitionBy: "date",
       clusterBy: ["traffic_source_type_name","video_id"],

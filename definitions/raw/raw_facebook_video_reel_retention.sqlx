@@ -1,0 +1,28 @@
+
+-- A table that contains the raw Facebook video reel audience retention (second-by-second)
+config {
+  type: "view",
+  tags: ["raw"],
+  assertions: {
+    uniqueKey: ["video_id", "target_date", "second"],
+    nonNull: ["video_id", "target_date", "second"],
+    rowConditions: []
+  },
+  columns: {
+    video_id: "The Facebook video ID",
+    second: "The second of playback (0-indexed) this retention percentage applies to, as a string per source",
+    retention_pct: "Percentage (0.0-1.0) of viewers still watching at this second",
+    target_date: "YYYY-MM-DD date of this retention snapshot",
+    ingestion_timestamp: "The timestamp this row was ingested into BigQuery"
+  }
+}
+
+SELECT
+  CAST(video_id AS STRING) AS video_id,
+  CAST(second AS INT) AS second,
+  CAST(retention_pct AS FLOAT64) AS retention_pct,
+  CAST(target_date AS DATE) AS target_date,
+  CAST(ingestion_timestamp AS TIMESTAMP) AS ingestion_timestamp
+FROM
+  `gds-social-data.govuk_facebook.facebook_video_reel_retention`
+WHERE video_id IS NOT NULL

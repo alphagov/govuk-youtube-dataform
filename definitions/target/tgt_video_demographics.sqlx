@@ -8,7 +8,7 @@
 -- join to fct_video_performance_daily and weight by total views.
 config {
   type: "table",
-  tags: ["target"],
+  tags: ["target","youtube"],
   bigquery: {
       partitionBy: "date",
       clusterBy: ["gender","age_group","video_id"],

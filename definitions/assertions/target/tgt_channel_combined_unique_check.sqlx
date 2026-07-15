@@ -12,8 +12,8 @@ SELECT
       video_id,
       live_or_on_demand,
       subscribed_status,
-      playback_location_type,
-      traffic_source_type,
+      playback_location,
+      traffic_source,
       device_type,
       operating_system
   ) AS duplicate_count

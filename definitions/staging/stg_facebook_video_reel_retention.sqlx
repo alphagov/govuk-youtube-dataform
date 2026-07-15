@@ -1,0 +1,47 @@
+
+-- Renames target_date -> date. retention_pct is itself a lifetime metric
+-- (one row per second-of-playback per video/date), so this pivots the
+-- second dimension away into named columns at fixed second offsets, using
+-- MAX(IF(...)) rather than AVG(CASE...ELSE 0...) — the latter would dilute
+-- the value by averaging it against every other second in the group instead
+-- of isolating the single matching row.
+config {
+  type: "table",
+  tags: ["staging"],
+  assertions: {
+    uniqueKey: ["video_id", "date"],
+    nonNull: ["video_id", "date"],
+    rowConditions: []
+  },
+  columns: {
+    video_id: "The Facebook video ID",
+    date: "YYYY-MM-DD date of this retention snapshot",
+    average_retention_pct: "Average percentage (0.0-1.0) of the video watched, across all seconds",
+    avg_retention_5s: "Percentage (0.0-1.0) of viewers still watching at 5 seconds",
+    avg_retention_10s: "Percentage (0.0-1.0) of viewers still watching at 10 seconds",
+    avg_retention_15s: "Percentage (0.0-1.0) of viewers still watching at 15 seconds",
+    avg_retention_20s: "Percentage (0.0-1.0) of viewers still watching at 20 seconds",
+    avg_retention_25s: "Percentage (0.0-1.0) of viewers still watching at 25 seconds",
+    avg_retention_30s: "Percentage (0.0-1.0) of viewers still watching at 30 seconds"
+  }
+}
+
+js {
+  const { maxIfConditionValueNotNull } = require('includes/utils');
+  const { stagingAlwaysNullChecks } = require('includes/constants');
+  // average_retention_pct isn't a per-second pivot column, so it's excluded here
+  // and selected separately below.
+  const retentionSecondColumns = stagingAlwaysNullChecks.find(
+    check => check.table === 'stg_facebook_video_reel_retention'
+  ).columns.filter(column => column !== 'average_retention_pct');
+}
+
+SELECT
+  video_id,
+  target_date AS date,
+  AVG(retention_pct) AS average_retention_pct,
+  ${retentionSecondColumns.map(
+    column => maxIfConditionValueNotNull('second', Number(column.match(/\d+/)[0]), 'retention_pct', column)
+  ).join(',\n  ')}
+FROM ${ref("raw_facebook_video_reel_retention")}
+GROUP BY video_id, target_date

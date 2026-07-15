@@ -6,7 +6,7 @@
 -- by summing over live_or_on_demand, subscribed_status, and country_code.
 config {
   type: "table",
-  tags: ["target"],
+  tags: ["target","youtube"],
   bigquery: {
       partitionBy: "date",
       clusterBy:["device_type","operating_system","video_id"],

@@ -12,9 +12,9 @@ config {
   columns: {
     video_id: "the video id",
     date: "YYYY-MM-DD date of data",
-    engage_views: "The number of times the channel's videos have been viewed past the initial seconds.",
+    engaged_views: "The number of times the channel's videos have been viewed past the initial seconds.",
     views: "This metric represents different numbers in different types of reports. This is a core metric and is subject to the Deprecation Policy.",
-    red_Views: "The number of times that a video was viewed by YouTube Premium (previously known as YouTube Red) members.",
+    red_views: "The number of times that a video was viewed by YouTube Premium (previously known as YouTube Red) members.",
     comments: "The number of times that users commented on a video. See the YouTube Help Center for more information. This is a core metric and is subject to the Deprecation Policy.",
     likes: "The number of times that users indicated that they liked a video by giving it a positive rating. This is a core metric and is subject to the Deprecation Policy.",
     dislikes: "The number of times that users indicated that they disliked a video by giving it a negative rating. This is a core metric and is subject to the Deprecation Policy.",

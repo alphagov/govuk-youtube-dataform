@@ -1,0 +1,39 @@
+
+-- Pivots the EAV-shaped facebook_post_insights raw table into one row per
+-- (post_id, date), with each distinct metric as its own column. period is
+-- always 'lifetime' today; filtered defensively so a future new period
+-- value can't silently collide inside MAX(IF(...)).
+config {
+  type: "table",
+  tags: ["staging"],
+  assertions: {
+    uniqueKey: ["post_id", "date"],
+    nonNull: ["post_id", "date"],
+    rowConditions: []
+  },
+  columns: {
+    post_id: "The Facebook post ID",
+    date: "YYYY-MM-DD date of this insights snapshot",
+    post_clicks: "Total clicks on the post",
+    post_media_view: "Number of times media on the post was viewed",
+    post_total_media_view_unique: "Number of unique users who viewed media on the post"
+  }
+}
+
+js {
+  const { maxIfConditionValueNotNull } = require('includes/utils');
+  const { stagingAlwaysNullChecks } = require('includes/constants');
+  const postInsightsColumns = stagingAlwaysNullChecks.find(
+    check => check.table === 'stg_facebook_post_insights'
+  ).columns;
+}
+
+SELECT
+  post_id,
+  target_date AS date,
+  ${postInsightsColumns.map(
+    column => maxIfConditionValueNotNull('metric', column, 'value')
+  ).join(',\n  ')}
+FROM ${ref("raw_facebook_post_insights")}
+WHERE period = 'lifetime'
+GROUP BY post_id, target_date

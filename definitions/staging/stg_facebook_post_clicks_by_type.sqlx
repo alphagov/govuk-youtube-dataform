@@ -1,0 +1,42 @@
+
+-- Pivots the EAV-shaped facebook_post_clicks_by_type raw table into one row
+-- per (post_id, date), with each click_type as its own column.
+config {
+  type: "table",
+  tags: ["staging"],
+  assertions: {
+    uniqueKey: ["post_id", "date"],
+    nonNull: ["post_id", "date"],
+    rowConditions: []
+  },
+  columns: {
+    post_id: "The Facebook post ID",
+    date: "YYYY-MM-DD date of this clicks snapshot",
+    clicks_link: "Number of link clicks on the post",
+    clicks_other: "Number of other clicks on the post",
+    clicks_photo_view: "Number of photo view clicks on the post"
+  }
+}
+
+js {
+  const { maxIfConditionValueNotNull } = require('includes/utils');
+  const { stagingAlwaysNullChecks } = require('includes/constants');
+  const postClicksColumns = stagingAlwaysNullChecks.find(
+    check => check.table === 'stg_facebook_post_clicks_by_type'
+  ).columns;
+  // click_type values don't map to column names by a fixed rule, so they're spelled out here.
+  const clickTypeByColumn = {
+    clicks_link: 'link clicks',
+    clicks_other: 'other clicks',
+    clicks_photo_view: 'photo view'
+  };
+}
+
+SELECT
+  post_id,
+  target_date AS date,
+  ${postClicksColumns.map(
+    column => maxIfConditionValueNotNull('click_type', clickTypeByColumn[column], 'clicks', column)
+  ).join(',\n  ')}
+FROM ${ref("raw_facebook_post_clicks_by_type")}
+GROUP BY post_id, target_date

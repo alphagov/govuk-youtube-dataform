@@ -1,0 +1,95 @@
+-- Core daily Facebook video performance fact model, combining metadata,
+-- lifetime insights, reactions, social actions, and audience retention into
+-- a single (video_id, date)-grain table. Single source (no YouTube-style
+-- union/cutoff/data_source logic — Facebook runs in parallel, not replacing
+-- another source). Grain spine is a UNION DISTINCT of (video_id, date)
+-- across all 5 contributing staging tables, since each is an independent
+-- daily snapshot pull and may not share identical coverage; this avoids
+-- silently dropping rows that a naive LEFT JOIN from stg_facebook_videos
+-- alone could miss. Insight/reaction/social-action/retention columns are
+-- legitimately NULL where a video had no activity of that type on that
+-- date (not a data quality issue).
+config {
+  type: "table",
+  tags: ["target","facebook"],
+  bigquery: {
+    partitionBy: "date",
+    clusterBy: ["video_id"],
+    requirePartitionFilter: true
+  },
+  columns: {
+    video_date_id: "Surrogate key: MD5 hash of date-video_id",
+    date: "YYYY-MM-DD date of data",
+    video_id: "The Facebook video ID",
+    page_id: "The Facebook page ID that owns the video",
+    associated_post_id: "The ID of the Facebook post associated with this video",
+    title: "The title of the video (may be NULL if no metadata snapshot for this date), lifetime value",
+    description: "The text description of the video",
+    created_time: "The timestamp the video was created/published",
+    length: "Duration of the video in seconds (unit inferred from observed 1.7-123s range, not confirmed against API docs)",
+    blue_reels_play_count: "Number of plays of the video as a Facebook Reel, lifetime value",
+    fb_reels_replay_count: "Number of replays of the video as a Facebook Reel, lifetime value",
+    fb_reels_total_plays: "Total plays of the video as a Facebook Reel, lifetime value",
+    reaction_anger: "Count of 'angry' reactions on the video's reel, lifetime value",
+    reaction_haha: "Count of 'haha' reactions on the video's reel, lifetime value",
+    reaction_like: "Count of 'like' reactions on the video's reel,, lifetime value",
+    reaction_love: "Count of 'love' reactions on the video's reel,, lifetime value",
+    reaction_sorry: "Count of 'sorry/sad' reactions on the video's reel,, lifetime value",
+    reaction_wow: "Count of 'wow' reactions on the video's reel,, lifetime value",
+    comments: "Count of comments on the video's reel, lifetime value",
+    shares: "Count of shares of the video's reel, lifetime value",
+    average_retention_pct: "Average percentage (0.0-1.0) of the video watched, across all seconds, lifetime value",
+    avg_retention_5s: "Percentage (0.0-1.0) of viewers still watching at 5 seconds, lifetime value",
+    avg_retention_10s: "Percentage (0.0-1.0) of viewers still watching at 10 seconds, lifetime value",
+    avg_retention_15s: "Percentage (0.0-1.0) of viewers still watching at 15 seconds, lifetime value",
+    avg_retention_20s: "Percentage (0.0-1.0) of viewers still watching at 20 seconds, lifetime value",
+    avg_retention_25s: "Percentage (0.0-1.0) of viewers still watching at 25 seconds, lifetime value",
+    avg_retention_30s: "Percentage (0.0-1.0) of viewers still watching at 30 seconds, lifetime value"
+  }
+}
+
+WITH GRAIN_SPINE AS (
+  SELECT video_id, date FROM ${ref("stg_facebook_video_reel_reactions")}
+  UNION DISTINCT
+  SELECT video_id, date FROM ${ref("stg_facebook_video_reel_social_actions")}
+  UNION DISTINCT
+  SELECT video_id, date FROM ${ref("stg_facebook_video_reel_retention")}
+)
+SELECT
+  TO_HEX(MD5(CONCAT(spine.date, '-', spine.video_id))) AS video_date_id,
+  spine.date,
+  spine.video_id,
+  v.page_id,
+  v.associated_post_id,
+  v.title,
+  v.description,
+  v.created_time,
+  v.length,
+  i.blue_reels_play_count,
+  i.fb_reels_replay_count,
+  i.fb_reels_total_plays,
+  i.post_impressions_unique,
+  i.post_video_avg_time_watched,
+  i.post_video_followers,
+  i.post_video_view_time,
+  r.reaction_anger,
+  r.reaction_haha,
+  r.reaction_like,
+  r.reaction_love,
+  r.reaction_sorry,
+  r.reaction_wow,
+  sa.comments,
+  sa.shares,
+  ret.average_retention_pct,
+  ret.avg_retention_5s,
+  ret.avg_retention_10s,
+  ret.avg_retention_15s,
+  ret.avg_retention_20s,
+  ret.avg_retention_25s,
+  ret.avg_retention_30s
+FROM GRAIN_SPINE spine
+LEFT JOIN ${ref("stg_facebook_videos")} v USING (video_id, date)
+LEFT JOIN ${ref("stg_facebook_video_insights")} i USING (video_id, date)
+LEFT JOIN ${ref("stg_facebook_video_reel_reactions")} r USING (video_id, date)
+LEFT JOIN ${ref("stg_facebook_video_reel_social_actions")} sa USING (video_id, date)
+LEFT JOIN ${ref("stg_facebook_video_reel_retention")} ret USING (video_id, date)

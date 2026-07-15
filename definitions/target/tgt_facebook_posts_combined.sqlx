@@ -1,0 +1,84 @@
+-- Core daily Facebook post fact model, combining post metadata, reactions,
+-- activity (unique users per action), clicks by type, and lifetime insights
+-- into a single (post_id, date)-grain table. Single source (no YouTube-style
+-- union/cutoff/data_source logic). Grain spine is a UNION DISTINCT of
+-- (post_id, date) across all 5 contributing staging tables, since each is
+-- an independent daily snapshot pull and may not share identical coverage.
+-- Reaction/activity/clicks/insight columns are legitimately NULL where a
+-- post had no activity of that type on that date (not a data quality issue).
+config {
+  type: "table",
+  tags: ["target","facebook"],
+  bigquery: {
+    partitionBy: "date",
+    clusterBy: ["post_type","post_id"],
+    requirePartitionFilter: true
+  },
+  columns: {
+    post_date_id: "Surrogate key: MD5 hash of date-post_id",
+    date: "YYYY-MM-DD date of data",
+    post_id: "The Facebook post ID",
+    page_id: "The Facebook page ID that owns the post (may be NULL if no metadata snapshot for this date)",
+    message: "The text content of the post",
+    created_time: "The timestamp the post was created/published",
+    post_type: "The type of post, e.g. photo, video_inline, share, album",
+    permalink_url: "The permanent URL of the post",
+    reaction_like: "Count of 'like' reactions on the post, lifetime value",
+    reaction_love: "Count of 'love' reactions on the post, lifetime value",
+    reaction_wow: "Count of 'wow' reactions on the post, lifetime value",
+    reaction_haha: "Count of 'haha' reactions on the post, lifetime value",
+    reaction_sad: "Count of 'sad' reactions on the post, lifetime value",
+    reaction_angry: "Count of 'angry' reactions on the post, lifetime value",
+    unique_users_comment: "Number of unique users who commented on the post, lifetime value",
+    unique_users_like: "Number of unique users who liked the post, lifetime value",
+    unique_users_share: "Number of unique users who shared the post, lifetime value",
+    clicks_link: "Number of link clicks on the post, lifetime value",
+    clicks_other: "Number of other clicks on the post, lifetime value",
+    clicks_photo_view: "Number of photo view clicks on the post, lifetime value",
+    post_clicks: "Total clicks on the post, lifetime value",
+    post_media_view: "Number of times media on the post was viewed, lifetime value",
+    post_total_media_view_unique: "Number of unique users who viewed media on the post, lifetime value"
+  }
+}
+
+WITH GRAIN_SPINE AS (
+  SELECT post_id, date FROM ${ref("stg_facebook_posts")}
+  UNION DISTINCT
+  SELECT post_id, date FROM ${ref("stg_facebook_post_reactions")}
+  UNION DISTINCT
+  SELECT post_id, date FROM ${ref("stg_facebook_post_activity")}
+  UNION DISTINCT
+  SELECT post_id, date FROM ${ref("stg_facebook_post_clicks_by_type")}
+  UNION DISTINCT
+  SELECT post_id, date FROM ${ref("stg_facebook_post_insights")}
+)
+SELECT
+  TO_HEX(MD5(CONCAT(spine.date, '-', spine.post_id))) AS post_date_id,
+  spine.date,
+  spine.post_id,
+  p.page_id,
+  p.message,
+  p.created_time,
+  p.post_type,
+  p.permalink_url,
+  r.reaction_like,
+  r.reaction_love,
+  r.reaction_wow,
+  r.reaction_haha,
+  r.reaction_sad,
+  r.reaction_angry,
+  a.unique_users_comment,
+  a.unique_users_like,
+  a.unique_users_share,
+  c.clicks_link,
+  c.clicks_other,
+  c.clicks_photo_view,
+  i.post_clicks,
+  i.post_media_view,
+  i.post_total_media_view_unique
+FROM GRAIN_SPINE spine
+LEFT JOIN ${ref("stg_facebook_posts")} p USING (post_id, date)
+LEFT JOIN ${ref("stg_facebook_post_reactions")} r USING (post_id, date)
+LEFT JOIN ${ref("stg_facebook_post_activity")} a USING (post_id, date)
+LEFT JOIN ${ref("stg_facebook_post_clicks_by_type")} c USING (post_id, date)
+LEFT JOIN ${ref("stg_facebook_post_insights")} i USING (post_id, date)

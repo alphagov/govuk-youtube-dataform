@@ -1,0 +1,34 @@
+
+-- A table that contains the raw Facebook post metadata snapshot (one row per post per day)
+config {
+  type: "view",
+  tags: ["raw"],
+  assertions: {
+    uniqueKey: ["post_id", "target_date"],
+    nonNull: ["post_id", "target_date", "page_id"],
+    rowConditions: []
+  },
+  columns: {
+    post_id: "The Facebook post ID",
+    page_id: "The Facebook page ID that owns the post",
+    message: "The text content of the post",
+    created_time: "The timestamp the post was created/published",
+    post_type: "The type of post, e.g. photo, video_inline, share, album",
+    permalink_url: "The permanent URL of the post",
+    target_date: "YYYY-MM-DD date of this metadata snapshot",
+    ingestion_timestamp: "The timestamp this row was ingested into BigQuery"
+  }
+}
+
+SELECT
+  CAST(post_id AS STRING) AS post_id,
+  CAST(page_id AS STRING) AS page_id,
+  CAST(message AS STRING) AS message,
+  CAST(created_time AS TIMESTAMP) AS created_time,
+  CAST(post_type AS STRING) AS post_type,
+  CAST(permalink_url AS STRING) AS permalink_url,
+  CAST(target_date AS DATE) AS target_date,
+  CAST(ingestion_timestamp AS TIMESTAMP) AS ingestion_timestamp
+FROM
+  `gds-social-data.govuk_facebook.facebook_posts`
+WHERE post_id IS NOT NULL

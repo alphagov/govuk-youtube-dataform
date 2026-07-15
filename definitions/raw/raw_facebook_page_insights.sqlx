@@ -1,0 +1,32 @@
+
+-- A table that contains the raw Facebook page insights (EAV shape, mixed periods)
+config {
+  type: "view",
+  tags: ["raw"],
+  assertions: {
+    uniqueKey: ["page_id", "target_date", "metric", "period"],
+    nonNull: ["page_id", "target_date", "metric", "period"],
+    rowConditions: []
+  },
+  columns: {
+    page_id: "The Facebook page ID",
+    metric: "The name of the insight metric, e.g. page_views_total, page_follows",
+    period: "The aggregation period the metric value applies to (day or lifetime, depending on metric)",
+    end_time: "The end timestamp of the period this metric value covers",
+    value: "The numeric value of the metric",
+    target_date: "YYYY-MM-DD date of this insights snapshot",
+    ingestion_timestamp: "The timestamp this row was ingested into BigQuery"
+  }
+}
+
+SELECT
+  CAST(page_id AS STRING) AS page_id,
+  CAST(metric AS STRING) AS metric,
+  CAST(period AS STRING) AS period,
+  CAST(end_time AS TIMESTAMP) AS end_time,
+  CAST(value AS INT64) AS value,
+  CAST(target_date AS DATE) AS target_date,
+  CAST(ingestion_timestamp AS TIMESTAMP) AS ingestion_timestamp
+FROM
+  `gds-social-data.govuk_facebook.facebook_page_insights`
+WHERE page_id IS NOT NULL

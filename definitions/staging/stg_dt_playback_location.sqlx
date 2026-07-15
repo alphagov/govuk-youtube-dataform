@@ -6,8 +6,8 @@ config {
   type: "table",
   tags: ["staging"],
   assertions: {
-    uniqueKey: ["date", "video_id", "playback_location_type", "playback_location_detail", "live_or_on_demand", "subscribed_status", "country_code"],
-    nonNull: ["date", "video_id", "playback_location_type", "views", "watch_time_minutes"],
+    uniqueKey: ["date", "video_id","playback_location_type_name", "playback_location_type", "playback_location_detail", "live_or_on_demand", "subscribed_status", "country_code"],
+    nonNull: ["date", "video_id", "playback_location_type_name", "playback_location_type", "views", "watch_time_minutes"],
     rowConditions: ['playback_location_type IN (0,1,2,5,7,8,10)' ]
     },
   columns: {
@@ -16,6 +16,7 @@ config {
     live_or_on_demand: "Whether the video was streamed live or watched on demand",
     subscribed_status: "Whether the activity is from subscribed or non-subscribed users",
     country_code: "ISO country code for the viewer",
+    playback_location_type_name: "The category of plaayback_location",
     playback_location_type: "Integer code identifying where the video was viewed",
     playback_location_detail: "URL or application where the playback occurred",
     views: "The number of views at this playback location",

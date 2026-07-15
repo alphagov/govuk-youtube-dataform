@@ -1,0 +1,42 @@
+
+-- Pivots the EAV-shaped facebook_video_reel_social_actions raw table into one
+-- row per (video_id, date). Column names use plural form (comments/shares) to
+-- match existing YouTube target naming conventions, not a literal lowercase
+-- of action_type.
+config {
+  type: "table",
+  tags: ["staging"],
+  assertions: {
+    uniqueKey: ["video_id", "date"],
+    nonNull: ["video_id", "date"],
+    rowConditions: []
+  },
+  columns: {
+    video_id: "The Facebook video ID",
+    date: "YYYY-MM-DD date of this social actions snapshot",
+    comments: "Count of comments on the video's reel",
+    shares: "Count of shares of the video's reel"
+  }
+}
+
+js {
+  const { maxIfConditionValueNotNull } = require('includes/utils');
+  const { stagingAlwaysNullChecks } = require('includes/constants');
+  const socialActionColumns = stagingAlwaysNullChecks.find(
+    check => check.table === 'stg_facebook_video_reel_social_actions'
+  ).columns;
+  // action_type values don't map to column names by a fixed rule, so they're spelled out here.
+  const actionTypeByColumn = {
+    comments: 'COMMENT',
+    shares: 'SHARE'
+  };
+}
+
+SELECT
+  video_id,
+  target_date AS date,
+  ${socialActionColumns.map(
+    column => maxIfConditionValueNotNull('action_type', actionTypeByColumn[column], 'count', column)
+  ).join(',\n  ')}
+FROM ${ref("raw_facebook_video_reel_social_actions")}
+GROUP BY video_id, target_date

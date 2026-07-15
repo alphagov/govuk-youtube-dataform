@@ -1,0 +1,75 @@
+-- Core daily Facebook video performance fact model, combining metadata,
+-- lifetime insights, reactions, social actions, and audience retention into
+-- a single (video_id, date)-grain table. Single source (no YouTube-style
+-- union/cutoff/data_source logic — Facebook runs in parallel, not replacing
+-- another source). Grain spine is a UNION DISTINCT of (video_id, date)
+-- across all contributing staging tables, since each is an independent
+-- daily snapshot pull and may not share identical coverage; this avoids
+-- silently dropping rows that a naive LEFT JOIN from stg_facebook_videos
+-- alone could miss. Insight/reaction/social-action/retention columns are
+-- legitimately NULL where a video had no activity of that type on that
+-- date (not a data quality issue).
+config {
+  type: "table",
+  tags: ["target","facebook"],
+  bigquery: {
+    partitionBy: "date",
+    clusterBy: ["video_id"],
+    requirePartitionFilter: true
+  },
+  columns: {
+    video_date_id: "Surrogate key: MD5 hash of date-video_id",
+    date: "YYYY-MM-DD date of data",
+    video_id: "The Facebook video ID",
+    page_id: "The Facebook page ID that owns the video",
+    associated_post_id: "The ID of the Facebook post associated with this video",
+    title: "The title of the video (may be NULL if no metadata snapshot for this date)",
+    description: "The text description of the video",
+    created_time: "The timestamp the video was created/published",
+    length: "Duration of the video in seconds (unit inferred from observed 1.7-123s range, not confirmed against API docs)",
+    post_impressions_unique: "Number of unique people who saw the post containing this video, lifetime value",
+    post_video_avg_time_watched: "Average time watched for the video (unit unconfirmed), lifetime value",
+    post_video_followers: "Number of page followers who watched the video, lifetime value",
+    post_video_view_time: "Total time spent watching the video, lifetime value"
+  }
+}
+
+WITH COMBINED_VIDEOS AS (
+  SELECT video_id, date FROM ${ref("stg_facebook_videos")}
+  UNION DISTINCT
+  SELECT video_id, date FROM ${ref("stg_facebook_video_insights")}
+),
+REEL_VIDEO_IDS AS (
+  SELECT DISTINCT video_id FROM ${ref("stg_facebook_video_reel_reactions")}
+  UNION DISTINCT
+  SELECT video_id FROM ${ref("stg_facebook_video_reel_retention")}
+  UNION DISTINCT
+  SELECT video_id FROM ${ref("stg_facebook_video_reel_social_actions")}
+),
+/* removing the reel IDs as they do not turn any values from the video_insights edgs */
+GRAIN_SPINE AS (
+  SELECT cv.*
+  FROM COMBINED_VIDEOS cv
+  WHERE NOT EXISTS (
+    SELECT 1
+    FROM REEL_VIDEO_IDS r
+    WHERE r.video_id = cv.video_id
+  )
+)
+SELECT
+  TO_HEX(MD5(CONCAT(spine.date, '-', spine.video_id))) AS video_date_id,
+  spine.date,
+  spine.video_id,
+  v.page_id,
+  v.associated_post_id,
+  v.title,
+  v.description,
+  v.created_time,
+  v.length,
+  i.post_impressions_unique,
+  i.post_video_avg_time_watched,
+  i.post_video_followers,
+  i.post_video_view_time
+FROM GRAIN_SPINE spine
+LEFT JOIN ${ref("stg_facebook_videos")} v USING (video_id, date)
+LEFT JOIN ${ref("stg_facebook_video_insights")} i USING (video_id, date)

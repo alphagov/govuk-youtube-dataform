@@ -1,0 +1,28 @@
+
+-- A table that contains the raw Facebook video reel reactions (lifetime counts, EAV shape)
+config {
+  type: "view",
+  tags: ["raw"],
+  assertions: {
+    uniqueKey: ["video_id", "target_date", "reaction_type"],
+    nonNull: ["video_id", "target_date", "reaction_type"],
+    rowConditions: []
+  },
+  columns: {
+    video_id: "The Facebook video ID",
+    reaction_type: "The reaction type, e.g. REACTION_LOVE, REACTION_ANGER",
+    count: "The number of reactions of this type",
+    target_date: "YYYY-MM-DD date of this reactions snapshot",
+    ingestion_timestamp: "The timestamp this row was ingested into BigQuery"
+  }
+}
+
+SELECT
+  CAST(video_id AS STRING) AS video_id,
+  CAST(reaction_type AS STRING) AS reaction_type,
+  CAST(count AS INT64) AS count,
+  CAST(target_date AS DATE) AS target_date,
+  CAST(ingestion_timestamp AS TIMESTAMP) AS ingestion_timestamp
+FROM
+  `gds-social-data.govuk_facebook.facebook_video_reel_reactions`
+WHERE video_id IS NOT NULL

@@ -1,0 +1,38 @@
+
+-- Pivots the EAV-shaped facebook_post_activity raw table into one row per
+-- (post_id, date). Columns are prefixed unique_users_ since this table
+-- counts distinct users taking each action, not total reaction counts
+-- (which live separately in stg_facebook_post_reactions).
+config {
+  type: "table",
+  tags: ["staging"],
+  assertions: {
+    uniqueKey: ["post_id", "date"],
+    nonNull: ["post_id", "date"],
+    rowConditions: []
+  },
+  columns: {
+    post_id: "The Facebook post ID",
+    date: "YYYY-MM-DD date of this activity snapshot",
+    unique_users_comment: "Number of unique users who commented on the post",
+    unique_users_like: "Number of unique users who liked the post",
+    unique_users_share: "Number of unique users who shared the post"
+  }
+}
+
+js {
+  const { maxIfConditionValueNotNull } = require('includes/utils');
+  const { stagingAlwaysNullChecks } = require('includes/constants');
+  const postActivityColumns = stagingAlwaysNullChecks.find(
+    check => check.table === 'stg_facebook_post_activity'
+  ).columns;
+}
+
+SELECT
+  post_id,
+  target_date AS date,
+  ${postActivityColumns.map(
+    column => maxIfConditionValueNotNull('action_type', column.replace('unique_users_', ''), 'unique_users', column)
+  ).join(',\n  ')}
+FROM ${ref("raw_facebook_post_activity")}
+GROUP BY post_id, target_date

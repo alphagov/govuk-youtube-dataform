@@ -1,0 +1,30 @@
+
+-- Renames target_date -> date and passes through the Facebook post metadata snapshot.
+config {
+  type: "table",
+  tags: ["staging"],
+  assertions: {
+    uniqueKey: ["post_id", "date"],
+    nonNull: ["post_id", "date", "page_id"],
+    rowConditions: []
+  },
+  columns: {
+    post_id: "The Facebook post ID",
+    date: "YYYY-MM-DD date of this metadata snapshot",
+    page_id: "The Facebook page ID that owns the post",
+    message: "The text content of the post",
+    created_time: "The timestamp the post was created/published",
+    post_type: "The type of post, e.g. photo, video_inline, share, album",
+    permalink_url: "The permanent URL of the post"
+  }
+}
+
+SELECT
+  post_id,
+  target_date AS date,
+  page_id,
+  message,
+  created_time,
+  post_type,
+  permalink_url
+FROM ${ref("raw_facebook_posts")}

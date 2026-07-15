@@ -1,0 +1,56 @@
+-- Core daily Facebook page fact model, combining page metadata and page
+-- insights into a single (page_id, date)-grain table. Single source (no
+-- YouTube-style union/cutoff/data_source logic). Grain spine is a UNION
+-- DISTINCT of (page_id, date) across both contributing staging tables,
+-- since each is an independent daily snapshot pull and may not share
+-- identical coverage. Insight columns are legitimately NULL where a metric
+-- wasn't reported for that page/date (not a data quality issue).
+config {
+  type: "table",
+  tags: ["target","facebook"],
+  bigquery: {
+    partitionBy: "date",
+    clusterBy: ["page_id"],
+    requirePartitionFilter: true
+  },
+  columns: {
+    page_date_id: "Surrogate key: MD5 hash of date-page_id",
+    date: "YYYY-MM-DD date of data",
+    page_id: "The Facebook page ID",
+    name: "The name of the page",
+    fan_count: "The number of people who like the page, lifetime value",
+    followers_count: "The number of people who follow the page, lifetime value",
+    talking_about_count: "The number of people talking about the page, daily value",
+    page_daily_follows_unique: "Number of unique users who followed the page that day",
+    page_daily_unfollows_unique: "Number of unique users who unfollowed the page that day",
+    page_follows: "Total lifetime follows of the page, lifetime value",
+    page_media_view: "Number of times media on the page was viewed that day",
+    page_post_engagements: "Number of engagements with the page's posts that day",
+    page_total_media_view_unique: "Number of unique users who viewed media on the page that day",
+    page_views_total: "Total number of views of the page that day"
+  }
+}
+
+WITH GRAIN_SPINE AS (
+  SELECT page_id, date FROM ${ref("stg_facebook_page_info")}
+  UNION DISTINCT
+  SELECT page_id, date FROM ${ref("stg_facebook_page_insights")}
+)
+SELECT
+  TO_HEX(MD5(CONCAT(spine.date, '-', spine.page_id))) AS page_date_id,
+  spine.date,
+  spine.page_id,
+  p.name,
+  p.fan_count,
+  p.followers_count,
+  p.talking_about_count,
+  i.page_daily_follows_unique,
+  i.page_daily_unfollows_unique,
+  i.page_follows,
+  i.page_media_view,
+  i.page_post_engagements,
+  i.page_total_media_view_unique,
+  i.page_views_total
+FROM GRAIN_SPINE spine
+LEFT JOIN ${ref("stg_facebook_page_info")} p USING (page_id, date)
+LEFT JOIN ${ref("stg_facebook_page_insights")} i USING (page_id, date)

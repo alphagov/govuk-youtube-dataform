@@ -15,7 +15,7 @@ config {
   columns: {
     date: "YYYY-MM-DD date of data",
     video_id: "The UUID for the video",
-    traffic_source_type: "How the viewer landed on the video (API string label, e.g. YT_SEARCH, SUGGESTED_VIDEO)",
+    traffic_source_type_name: "How the viewer landed on the video (API string label, e.g. YT_SEARCH, SUGGESTED_VIDEO)",
     content_type: "The type of content: liveStream, VideoONDemand, or shorts",
     views: "The number of times the video was viewed via this traffic source",
     engaged_views: "The number of times viewers stayed to watch past the initial seconds via this traffic source",

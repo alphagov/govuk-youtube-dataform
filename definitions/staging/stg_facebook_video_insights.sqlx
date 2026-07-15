@@ -1,0 +1,44 @@
+
+-- Pivots the EAV-shaped facebook_video_insights raw table into one row per
+-- (video_id, date), with each distinct metric as its own column, using
+-- conditional aggregation (MAX(IF(...))). period is always 'lifetime' today
+-- (lifetime totals as of this target_date snapshot); filtered defensively so
+-- a future new period value can't silently collide inside MAX(IF(...)).
+config {
+  type: "table",
+  tags: ["staging"],
+  assertions: {
+    uniqueKey: ["video_id", "date"],
+    nonNull: ["video_id", "date"],
+    rowConditions: []
+  },
+  columns: {
+    video_id: "The Facebook video ID",
+    date: "YYYY-MM-DD date of this insights snapshot",
+    blue_reels_play_count: "Number of plays of the video as a Facebook Reel",
+    fb_reels_replay_count: "Number of replays of the video as a Facebook Reel",
+    fb_reels_total_plays: "Total plays of the video as a Facebook Reel",
+    post_impressions_unique: "Number of unique people who saw the post containing this video",
+    post_video_avg_time_watched: "Average time watched for the video (unit unconfirmed)",
+    post_video_followers: "Number of page followers who watched the video",
+    post_video_view_time: "Total time spent watching the video (unit unconfirmed)"
+  }
+}
+
+js {
+  const { maxIfConditionValueNotNull } = require('includes/utils');
+  const { stagingAlwaysNullChecks } = require('includes/constants');
+  const videoInsightsColumns = stagingAlwaysNullChecks.find(
+    check => check.table === 'stg_facebook_video_insights'
+  ).columns;
+}
+
+SELECT
+  video_id,
+  target_date AS date,
+  ${videoInsightsColumns.map(
+    column => maxIfConditionValueNotNull('metric', column, 'value')
+  ).join(',\n  ')}
+FROM ${ref("raw_facebook_video_insights")}
+WHERE period = 'lifetime'
+GROUP BY video_id, target_date
