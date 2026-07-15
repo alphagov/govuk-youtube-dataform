@@ -1,0 +1,36 @@
+
+-- A table that contains the raw Instagram account metadata snapshot (one row per account per pull; pulls are irregular, not strictly daily)
+config {
+  type: "view",
+  tags: ["raw"],
+  assertions: {
+    uniqueKey: ["ig_user_id", "target_date"],
+    nonNull: ["ig_user_id", "target_date"],
+    rowConditions: []
+  },
+  columns: {
+    ig_user_id: "The Instagram Business Account ID",
+    username: "The account's Instagram handle",
+    name: "The display name of the account",
+    biography: "The account's bio text",
+    followers_count: "The number of followers of the account",
+    follows_count: "The number of accounts this account follows",
+    media_count: "The total number of media items published by the account",
+    target_date: "YYYY-MM-DD date of this metadata snapshot",
+    ingestion_timestamp: "The timestamp this row was ingested into BigQuery"
+  }
+}
+
+SELECT
+  CAST(ig_user_id AS STRING) AS ig_user_id,
+  CAST(username AS STRING) AS username,
+  CAST(name AS STRING) AS name,
+  CAST(biography AS STRING) AS biography,
+  CAST(followers_count AS INT64) AS followers_count,
+  CAST(follows_count AS INT64) AS follows_count,
+  CAST(media_count AS INT64) AS media_count,
+  CAST(target_date AS DATE) AS target_date,
+  CAST(ingestion_timestamp AS TIMESTAMP) AS ingestion_timestamp
+FROM
+  `gds-social-data.govuk_instagram.instagram_account`
+WHERE ig_user_id IS NOT NULL
