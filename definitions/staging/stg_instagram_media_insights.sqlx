@@ -1,0 +1,40 @@
+
+-- Pivots the instagram_media_insights raw table into one row per (media_id, date)
+config {
+  type: "table",
+  tags: ["staging"],
+  assertions: {
+    uniqueKey: ["media_id", "date"],
+    nonNull: ["media_id", "date"],
+    rowConditions: []
+  },
+  columns: {
+    media_id: "The Instagram media (post) ID",
+    date: "YYYY-MM-DD date of this insights snapshot",
+    comments: "Lifetime count of comments on the media, as reported by the insights endpoint",
+    likes: "Lifetime count of likes on the media, as reported by the insights endpoint",
+    reach: "Lifetime number of unique accounts that saw the media",
+    saved: "Lifetime number of times the media was saved",
+    shares: "Lifetime number of times the media was shared",
+    total_interactions: "Lifetime sum of likes, comments, saves and shares on the media",
+    views: "Lifetime number of views of the media"
+  }
+}
+
+js {
+  const { maxIfConditionValueNotNull } = require('includes/utils');
+  const { stagingAlwaysNullChecks } = require('includes/constants');
+  const mediaInsightsColumns = stagingAlwaysNullChecks.find(
+    check => check.table === 'stg_instagram_media_insights'
+  ).columns;
+}
+
+SELECT
+  media_id,
+  target_date AS date,
+  ${mediaInsightsColumns.map(
+    column => maxIfConditionValueNotNull('metric', column, 'value')
+  ).join(',\n  ')}
+FROM ${ref("raw_instagram_media_insights")}
+WHERE period = 'lifetime'
+GROUP BY media_id, target_date

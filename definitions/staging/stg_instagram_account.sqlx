@@ -1,0 +1,32 @@
+
+-- Renames target_date -> date and passes through the Instagram account metadata snapshot.
+config {
+  type: "table",
+  tags: ["staging"],
+  assertions: {
+    uniqueKey: ["ig_user_id", "date"],
+    nonNull: ["ig_user_id", "date"],
+    rowConditions: []
+  },
+  columns: {
+    ig_user_id: "The Instagram Business Account ID",
+    date: "YYYY-MM-DD date of this metadata snapshot",
+    username: "The account's Instagram handle",
+    name: "The display name of the account",
+    biography: "The account's bio text",
+    followers_count: "The number of followers of the account",
+    follows_count: "The number of accounts this account follows",
+    media_count: "The total number of media items published by the account"
+  }
+}
+
+SELECT
+  ig_user_id,
+  target_date AS date,
+  username,
+  name,
+  biography,
+  followers_count,
+  follows_count,
+  media_count
+FROM ${ref("raw_instagram_account")}

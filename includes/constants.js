@@ -290,6 +290,33 @@ const stagingAlwaysNullChecks = [
     dateColumn: "date",
     windowInterval: "INTERVAL 14 DAY",
     columns: ["title", "description", "created_time", "length"]
+  },
+  {
+    table: "stg_instagram_account",
+    dateColumn: "date",
+    windowInterval: "INTERVAL 21 DAY",
+    columns: ["username", "name", "biography", "followers_count",
+      "follows_count", "media_count"]
+  },
+  {
+    table: "stg_instagram_account_insights",
+    dateColumn: "date",
+    windowInterval: "INTERVAL 21 DAY",
+    columns: ["follower_count", "reach", "views"]
+  },
+  {
+    table: "stg_instagram_media",
+    dateColumn: "date",
+    windowInterval: "INTERVAL 21 DAY",
+    columns: ["caption", "media_type", "media_product_type", "media_label",
+      "permalink", "published_at", "like_count", "comments_count"]
+  },
+  {
+    table: "stg_instagram_media_insights",
+    dateColumn: "date",
+    windowInterval: "INTERVAL 21 DAY",
+    columns: ["comments", "likes", "reach", "saved", "shares",
+      "total_interactions", "views"]
   }
 ];
 

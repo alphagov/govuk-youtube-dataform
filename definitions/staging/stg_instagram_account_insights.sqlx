@@ -1,0 +1,35 @@
+
+-- Pivots the instagram_account_insights raw table into one row per ig_user_id, date
+config {
+  type: "table",
+  tags: ["staging"],
+  assertions: {
+    uniqueKey: ["ig_user_id", "date"],
+    nonNull: ["ig_user_id", "date"],
+    rowConditions: []
+  },
+  columns: {
+    ig_user_id: "The Instagram Business Account ID",
+    date: "YYYY-MM-DD date of this insights snapshot",
+    follower_count: "Net change in follower count that day",
+    reach: "Number of unique accounts reached that day",
+    views: "Number of views of the account that day"
+  }
+}
+
+js {
+  const { maxIfConditionValueNotNull } = require('includes/utils');
+  const { stagingAlwaysNullChecks } = require('includes/constants');
+  const accountInsightsColumns = stagingAlwaysNullChecks.find(
+    check => check.table === 'stg_instagram_account_insights'
+  ).columns;
+}
+
+SELECT
+  ig_user_id,
+  target_date AS date,
+  ${accountInsightsColumns.map(
+    column => maxIfConditionValueNotNull('metric', column, 'value')
+  ).join(',\n  ')}
+FROM ${ref("raw_instagram_account_insights")}
+GROUP BY ig_user_id, target_date
