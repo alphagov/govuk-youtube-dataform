@@ -1,8 +1,7 @@
--- Core Instagram feed created through a spine of stg_ins5agram_media and 
+-- Core Instagram feed created through a spine of stg_instagram_media and 
 -- stg_instagram_insights, joined on media_id and date. 
--- Joined on media_product_type = 'FEED', which only contains media_type PICTURE and CAROUSEL_ALBUM.
 -- We have duplicate metrics like_count, likes_lifetime, comments_count, comments_lifetime
--- the purpos is to check they align, and if not explore why. Once we are certain they align
+-- the purpose is to check they align, and if not explore why. Once we are certain they align
 -- we can remove the media_posts component, as the insights edge will be our approach going forward 
 config {
   type: "table",
@@ -23,7 +22,7 @@ config {
     media_label: "Human-readable label for this media_type/media_product_type combination",
     permalink: "The public URL of the media",
     published_at: "The timestamp the media was published",
-    like_count: "Number of likes on the media as reported by the media object endpoint at snapshot time, this seems to return a lower value then likes_lifetime",
+    like_count: "Number of likes on the media as reported by the media object endpoint at snapshot time, this seems to align with the likes_lifetime column",
     comments_count: "Number of comments on the media as reported by the media object endpoint at snapshot time, seems to match comments_lifetime",
     likes_lifetime: "Lifetime count of likes on the media as reported by the insights endpoint, lifetime value",
     comments_lifetime: "Lifetime count of comments on the media as reported by the insights endpoint, lifetime value",
