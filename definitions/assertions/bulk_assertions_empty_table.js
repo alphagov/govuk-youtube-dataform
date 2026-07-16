@@ -26,7 +26,11 @@ const tablesToCheck = [
 "raw_facebook_post_activity",
 "raw_facebook_post_clicks_by_type",
 "raw_facebook_post_insights",
-"raw_facebook_post_reactions"
+"raw_facebook_post_reactions",
+"raw_instagram_account",
+"raw_instagram_account_insights",
+"raw_instagram_media",
+"raw_instagram_media_insights"
 ]
 
 tablesToCheck.forEach(tableName => {
