@@ -1,0 +1,46 @@
+-- Core Instagram account fact model, combining account metadata and account
+-- insights into a single (ig_user_id, date) grain table.
+config {
+  type: "table",
+  tags: ["target","instagram"],
+  bigquery: {
+    partitionBy: "date",
+    requirePartitionFilter: true
+  },
+  columns: {
+    account_date_id: "Surrogate key: MD5 hash of date-ig_user_id",
+    date: "YYYY-MM-DD date of data",
+    ig_user_id: "The Instagram Business Account ID",
+    username: "The account's Instagram handle",
+    name: "The display name of the account",
+    biography: "The account's bio text",
+    followers_count: "Total number of followers as of this snapshot, point-in-time value",
+    follows_count: "Total number of accounts this account follows, point-in-time value",
+    media_count: "Total number of media items published by the account, point-in-time value",
+    follower_count_daily_change: "Net change in follower count that day, daily value (distinct from followers_count)",
+    reach: "Number of unique accounts reached that day, daily value",
+    views: "Number of views of the account that day, daily value"
+  }
+}
+
+WITH GRAIN_SPINE AS (
+  SELECT ig_user_id, date FROM ${ref("stg_instagram_account")}
+  UNION DISTINCT
+  SELECT ig_user_id, date FROM ${ref("stg_instagram_account_insights")}
+)
+SELECT
+  TO_HEX(MD5(CONCAT(spine.date, '-', spine.ig_user_id))) AS account_date_id,
+  spine.date,
+  spine.ig_user_id,
+  a.username,
+  a.name,
+  a.biography,
+  a.followers_count,
+  a.follows_count,
+  a.media_count,
+  i.follower_count AS follower_count_daily_change,
+  i.reach,
+  i.views
+FROM GRAIN_SPINE spine
+LEFT JOIN ${ref("stg_instagram_account")} a USING (ig_user_id, date)
+LEFT JOIN ${ref("stg_instagram_account_insights")} i USING (ig_user_id, date)
