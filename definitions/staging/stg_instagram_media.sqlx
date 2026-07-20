@@ -1,0 +1,41 @@
+
+-- Renames target_date -> date and timestamp -> published_at, and joins the
+-- media type lookup, for the Instagram media metadata snapshot.
+config {
+  type: "table",
+  tags: ["staging"],
+  assertions: {
+    uniqueKey: ["media_id", "date"],
+    nonNull: ["media_id", "date", "ig_user_id"],
+    rowConditions: []
+  },
+  columns: {
+    media_id: "The Instagram media (post) ID",
+    date: "YYYY-MM-DD date of this metadata snapshot",
+    ig_user_id: "The Instagram Business Account ID that owns the media",
+    caption: "The caption text of the media",
+    media_type: "The underlying media type, e.g. IMAGE, VIDEO, CAROUSEL_ALBUM",
+    media_product_type: "The Instagram surface the media was published to, e.g. FEED, REELS",
+    media_label: "Human-readable label for this media_type/media_product_type combination",
+    permalink: "The public URL of the media",
+    published_at: "The timestamp the media was published",
+    like_count: "The number of likes on the media, as reported by the media object endpoint at snapshot time",
+    comments_count: "The number of comments on the media, as reported by the media object endpoint at snapshot time"
+  }
+}
+
+SELECT
+  m.media_id,
+  m.target_date AS date,
+  m.ig_user_id,
+  m.caption,
+  m.media_type,
+  m.media_product_type,
+  l.media_label,
+  m.permalink,
+  m.timestamp AS published_at,
+  m.like_count,
+  m.comments_count
+FROM ${ref("raw_instagram_media")} m
+LEFT JOIN ${ref("lookup_instagram_media_type_mapping")} l
+  USING (media_type, media_product_type)

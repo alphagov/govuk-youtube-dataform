@@ -1,0 +1,13 @@
+config {
+  type: "assertion",
+  description: "Fails if duplicate rows exist for (date, ig_user_id)"
+}
+
+SELECT
+  t.*,
+  COUNT(*) OVER (
+    PARTITION BY date, ig_user_id
+  ) AS duplicate_count
+FROM ${ref("tgt_instagram_account_combined")} t
+WHERE (date >= DATE('1900-01-01') OR date IS NULL)
+QUALIFY duplicate_count > 1

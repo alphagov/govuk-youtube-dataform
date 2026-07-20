@@ -1,0 +1,30 @@
+
+-- A table that contains the raw Instagram media insights (EAV shape). Only period = 'lifetime' is observed today (comments, likes, reach, saved, shares, total_interactions, views), reported uniformly for every media snapshot.
+config {
+  type: "view",
+  tags: ["raw"],
+  assertions: {
+    uniqueKey: ["media_id", "target_date", "metric", "period"],
+    nonNull: ["media_id", "target_date", "metric", "period"],
+    rowConditions: []
+  },
+  columns: {
+    media_id: "The Instagram media (post) ID",
+    metric: "The name of the insight metric, e.g. likes, comments, reach, saved, shares, total_interactions, views",
+    period: "The aggregation period the metric value applies to (lifetime observed today)",
+    value: "The numeric value of the metric",
+    target_date: "YYYY-MM-DD date of this insights snapshot",
+    ingestion_timestamp: "The timestamp this row was ingested into BigQuery"
+  }
+}
+
+SELECT
+  CAST(media_id AS STRING) AS media_id,
+  CAST(metric AS STRING) AS metric,
+  CAST(period AS STRING) AS period,
+  CAST(value AS INT64) AS value,
+  CAST(target_date AS DATE) AS target_date,
+  CAST(ingestion_timestamp AS TIMESTAMP) AS ingestion_timestamp
+FROM
+  `gds-social-data.govuk_instagram.instagram_media_insights`
+WHERE media_id IS NOT NULL

@@ -1,0 +1,32 @@
+
+-- A table that contains the raw Instagram account insights (EAV shape). Only period = 'day' is observed today (follower_count, reach, views); end_time can legitimately be NULL on some rows.
+config {
+  type: "view",
+  tags: ["raw"],
+  assertions: {
+    uniqueKey: ["ig_user_id", "target_date", "metric", "period"],
+    nonNull: ["ig_user_id", "target_date", "metric", "period"],
+    rowConditions: []
+  },
+  columns: {
+    ig_user_id: "The Instagram Business Account ID",
+    metric: "The name of the insight metric, e.g. follower_count, reach, views",
+    period: "The aggregation period the metric value applies to (day observed today)",
+    end_time: "The end timestamp of the period this metric value covers; can be NULL for some metric/period combinations",
+    value: "The numeric value of the metric",
+    target_date: "YYYY-MM-DD date of this insights snapshot",
+    ingestion_timestamp: "The timestamp this row was ingested into BigQuery"
+  }
+}
+
+SELECT
+  CAST(ig_user_id AS STRING) AS ig_user_id,
+  CAST(metric AS STRING) AS metric,
+  CAST(period AS STRING) AS period,
+  CAST(end_time AS TIMESTAMP) AS end_time,
+  CAST(value AS INT64) AS value,
+  CAST(target_date AS DATE) AS target_date,
+  CAST(ingestion_timestamp AS TIMESTAMP) AS ingestion_timestamp
+FROM
+  `gds-social-data.govuk_instagram.instagram_account_insights`
+WHERE ig_user_id IS NOT NULL

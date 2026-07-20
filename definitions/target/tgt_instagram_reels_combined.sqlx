@@ -1,0 +1,72 @@
+-- Core Instagram Reels table with primary key date, media_ia, where stg_instagram_meida
+-- media_product_type = 'REELS', which only contains media_type reels. This is because Reels 
+-- will have additional endpoints specific to reel_insights edge. 
+-- We have duplicate metrics like_count, likes_lifetime, comments_count, comments_lifetime
+-- the purpos is to check they align, and if not explore why. Once we are certain they align
+-- we can remove the media_posts component, as the insights edge will be our approach going forward 
+config {
+  type: "table",
+  tags: ["target","instagram"],
+  bigquery: {
+    partitionBy: "date",
+    clusterBy: ["media_id"],
+    requirePartitionFilter: true
+  },
+  columns: {
+    media_date_id: "Surrogate key: MD5 hash of date-media_id",
+    date: "YYYY-MM-DD date of data",
+    media_id: "The Instagram media (post) ID",
+    ig_user_id: "The Instagram Business Account ID that owns the media",
+    caption: "The caption text of the media",
+    media_type: "The underlying media type (always VIDEO in this table)",
+    media_product_type: "The Instagram surface the media was published to (always REELS in this table)",
+    media_label: "Human-readable label for this media_type/media_product_type combination",
+    permalink: "The public URL of the media",
+    published_at: "The timestamp the media was published",
+    like_count: "Number of likes on the media as reported by the media object endpoint at snapshot time",
+    comments_count: "Number of comments on the media as reported by the media object endpoint at snapshot time",
+    likes_lifetime: "Lifetime count of likes on the media as reported by the insights endpoint, lifetime value",
+    comments_lifetime: "Lifetime count of comments on the media as reported by the insights endpoint, lifetime value",
+    reach: "Lifetime number of unique accounts that saw the media, lifetime value",
+    saved: "Lifetime number of times the media was saved, lifetime value",
+    shares: "Lifetime number of times the media was shared, lifetime value",
+    total_interactions: "Lifetime sum of likes, comments, saves and shares on the media, lifetime value",
+    views: "Lifetime number of views of the media, lifetime value"
+  }
+}
+
+WITH media_reels AS (
+  SELECT *
+  FROM ${ref("stg_instagram_media")}
+  WHERE media_product_type = 'REELS'
+),
+GRAIN_SPINE AS (
+  SELECT media_id, date FROM media_reels
+  UNION DISTINCT
+  SELECT i.media_id, i.date
+  FROM ${ref("stg_instagram_media_insights")} i
+  INNER JOIN (SELECT DISTINCT media_id FROM media_reels) f USING (media_id)
+)
+SELECT
+  TO_HEX(MD5(CONCAT(spine.date, '-', spine.media_id))) AS media_date_id,
+  spine.date,
+  spine.media_id,
+  m.ig_user_id,
+  m.caption,
+  m.media_type,
+  m.media_product_type,
+  m.media_label,
+  m.permalink,
+  m.published_at,
+  m.like_count,
+  m.comments_count,
+  i.likes AS likes_lifetime,
+  i.comments AS comments_lifetime,
+  i.reach,
+  i.saved,
+  i.shares,
+  i.total_interactions,
+  i.views
+FROM GRAIN_SPINE spine
+LEFT JOIN media_reels m USING (media_id, date)
+LEFT JOIN ${ref("stg_instagram_media_insights")} i USING (media_id, date)

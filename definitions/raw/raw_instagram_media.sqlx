@@ -1,0 +1,40 @@
+
+-- A table that contains the raw Instagram media metadata snapshot. Every pull re-snapshots the entire post catalogue (not a delta), so the same media_id recurs across many target_dates.
+config {
+  type: "view",
+  tags: ["raw"],
+  assertions: {
+    uniqueKey: ["media_id", "target_date"],
+    nonNull: ["media_id", "target_date", "ig_user_id"],
+    rowConditions: []
+  },
+  columns: {
+    ig_user_id: "The Instagram Business Account ID that owns the media",
+    media_id: "The Instagram media (post) ID",
+    caption: "The caption text of the media",
+    media_type: "The underlying media type, e.g. IMAGE, VIDEO, CAROUSEL_ALBUM",
+    media_product_type: "The Instagram surface the media was published to, e.g. FEED, REELS",
+    permalink: "The public URL of the media",
+    timestamp: "The timestamp the media was published",
+    like_count: "The number of likes on the media, as reported by the media object endpoint at snapshot time",
+    comments_count: "The number of comments on the media, as reported by the media object endpoint at snapshot time",
+    target_date: "YYYY-MM-DD date of this metadata snapshot",
+    ingestion_timestamp: "The timestamp this row was ingested into BigQuery"
+  }
+}
+
+SELECT
+  CAST(ig_user_id AS STRING) AS ig_user_id,
+  CAST(media_id AS STRING) AS media_id,
+  CAST(caption AS STRING) AS caption,
+  CAST(media_type AS STRING) AS media_type,
+  CAST(media_product_type AS STRING) AS media_product_type,
+  CAST(permalink AS STRING) AS permalink,
+  CAST(timestamp AS TIMESTAMP) AS timestamp,
+  CAST(like_count AS INT64) AS like_count,
+  CAST(comments_count AS INT64) AS comments_count,
+  CAST(target_date AS DATE) AS target_date,
+  CAST(ingestion_timestamp AS TIMESTAMP) AS ingestion_timestamp
+FROM
+  `gds-social-data.govuk_instagram.instagram_media`
+WHERE media_id IS NOT NULL
