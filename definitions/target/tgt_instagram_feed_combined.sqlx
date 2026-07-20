@@ -8,7 +8,7 @@ config {
   tags: ["target","instagram"],
   bigquery: {
     partitionBy: "date",
-    clusterBy: ["media_id"],
+    clusterBy: ["media_type"],
     requirePartitionFilter: true
   },
   columns: {
