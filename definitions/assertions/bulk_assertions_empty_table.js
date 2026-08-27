@@ -30,7 +30,14 @@ const tablesToCheck = [
 "raw_instagram_account",
 "raw_instagram_account_insights",
 "raw_instagram_media",
-"raw_instagram_media_insights"
+"raw_instagram_media_insights",
+"raw_threads_profile",
+"raw_threads_account_lifetime",
+"raw_threads_account_insights",
+"raw_threads_follower_demographics",
+"raw_threads_media",
+"raw_threads_media_insights",
+"raw_threads_replies"
 ]
 
 tablesToCheck.forEach(tableName => {
