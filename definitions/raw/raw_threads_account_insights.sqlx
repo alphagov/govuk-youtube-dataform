@@ -1,0 +1,34 @@
+
+-- A table that contains the raw Threads account insights (EAV shape). Only period = 'day' is observed today (likes, quotes, replies, reposts, views).
+-- Unlike the lifetime and media insights tables, target_date here is the day the metric describes rather than the day the data was pulled, so this is already a true daily series and needs no delta.
+-- end_time is only populated for the views metric, so it is deliberately excluded from nonNull.
+config {
+  type: "view",
+  tags: ["raw"],
+  assertions: {
+    uniqueKey: ["threads_user_id", "target_date", "metric", "period"],
+    nonNull: ["threads_user_id", "target_date", "metric", "period"],
+    rowConditions: []
+  },
+  columns: {
+    threads_user_id: "The Threads user ID",
+    metric: "The name of the insight metric, e.g. likes, quotes, replies, reposts, views",
+    period: "The aggregation period the metric value applies to (day observed today)",
+    end_time: "The end timestamp of the period this metric value covers; only populated for the views metric today",
+    value: "The numeric value of the metric for that day",
+    target_date: "YYYY-MM-DD date the metric value applies to",
+    ingestion_timestamp: "The timestamp this row was ingested into BigQuery"
+  }
+}
+
+SELECT
+  CAST(threads_user_id AS STRING) AS threads_user_id,
+  CAST(metric AS STRING) AS metric,
+  CAST(period AS STRING) AS period,
+  CAST(end_time AS TIMESTAMP) AS end_time,
+  CAST(value AS INT64) AS value,
+  CAST(target_date AS DATE) AS target_date,
+  CAST(ingestion_timestamp AS TIMESTAMP) AS ingestion_timestamp
+FROM
+  `gds-social-data.govuk_threads.threads_account_insights`
+WHERE threads_user_id IS NOT NULL
