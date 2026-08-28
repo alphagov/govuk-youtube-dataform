@@ -9,7 +9,7 @@ const maxIfConditionValueNotNull = (metricColumnName, metricRowCondition, valueC
 
 // Change in a cumulative lifetime metric since the entity's previous snapshot.
 // Snapshot cadence is irregular (Threads pulls have been 1-5 days apart), so this
-// is "change since the last pull", not strictly per-day - always emit it alongside
+// is "change since the last pull", not strictly per-day, always check against
 // daysSincePreviousSnapshot() so consumers can see the window each value covers.
 // NULL on an entity's first snapshot, and legitimately negative when a lifetime
 // counter goes down (unlikes, deletions), so it must not be clamped to zero.
@@ -23,8 +23,18 @@ const lifetimeDailyChange = (column, partitionColumns, dateColumn = 'date') =>
 const daysSincePreviousSnapshot = (partitionColumns, dateColumn = 'date') =>
   `DATE_DIFF(${dateColumn}, LAG(${dateColumn}) OVER (PARTITION BY ${partitionColumns.join(', ')} ORDER BY ${dateColumn}), DAY) AS days_since_previous_snapshot`;
 
+// Row-level sibling of maxIfConditionValueNotNull: splits a tall discriminator/value
+// pair into one typed column per discriminator value without collapsing the grain,
+// so exactly one of the emitted columns is populated on each row. Use this rather
+// than maxIfConditionValueNotNull wherever the tall rows must survive the pivot.
+// Mostly used for Non aggregates, compared to maxIfConditionaValueNotNull which is for aggregates
+
+const ifConditionValue = (conditionColumn, conditionValue, valueColumn, aliasName) =>
+  `IF(${conditionColumn} = '${conditionValue}', ${valueColumn}, NULL) AS ${aliasName}`;
+
 module.exports = {
   maxIfConditionValueNotNull,
   lifetimeDailyChange,
-  daysSincePreviousSnapshot
+  daysSincePreviousSnapshot,
+  ifConditionValue
 };

@@ -1,0 +1,76 @@
+-- Core Threads replies fact model at (reply_id, date) grain, enriched with context about the post
+-- at the root of the reply thread.
+--
+-- There are no insights metrics for replies anywhere in the source, so this model carries metadata
+-- only and has no lifetime or _daily_change columns. Reply volume per post is available as the
+-- replies / replies_daily_change columns of tgt_threads_media_combined.
+--
+-- The parent post context is joined from the latest known snapshot of each post rather than the
+-- snapshot matching this row's date. A reply can appear in a pull where its parent post was not
+-- re-snapshotted, and joining on (media_id, date) would silently drop the context on those rows.
+-- The consequence is that root_post_* fields are latest-known values, not as-at-date values, so
+-- don't use them to reconstruct how a post looked historically.
+config {
+  type: "table",
+  tags: ["target","threads"],
+  bigquery: {
+    partitionBy: "date",
+    clusterBy: ["media_type"],
+    requirePartitionFilter: true
+  },
+  columns: {
+    reply_date_id: "Surrogate key: MD5 hash of date-reply_id",
+    date: "YYYY-MM-DD date of data",
+    reply_id: "The Threads reply ID",
+    threads_user_id: "The Threads user ID the reply was collected for",
+    media_type: "The underlying media type of the reply, e.g. TEXT_POST, IMAGE",
+    text: "The text body of the reply",
+    replied_at: "The timestamp the reply was published",
+    shortcode: "The short code identifying the reply in its permalink",
+    permalink: "The public URL of the reply",
+    has_replies: "Whether the reply itself has replies",
+    is_reply: "Whether this row is a reply (true for every row observed today)",
+    root_post_id: "The media ID of the post at the root of the reply thread",
+    replied_to_id: "The media or reply ID this reply directly responds to",
+    hide_status: "The moderation hide status of the reply (always NULL in the source today)",
+    is_reply_to_own_post: "Whether root_post_id matches a post in stg_threads_media, i.e. the reply is on one of the account's own posts",
+    root_post_text: "The text body of the root post, from its latest known snapshot",
+    root_post_permalink: "The public URL of the root post, from its latest known snapshot",
+    root_post_published_at: "The timestamp the root post was published, from its latest known snapshot",
+    root_post_media_type: "The media type of the root post, from its latest known snapshot"
+  }
+}
+
+WITH latest_media AS (
+  SELECT
+    media_id,
+    text,
+    permalink,
+    published_at,
+    media_type
+  FROM ${ref("stg_threads_media")}
+  QUALIFY ROW_NUMBER() OVER (PARTITION BY media_id ORDER BY date DESC) = 1
+)
+SELECT
+  TO_HEX(MD5(CONCAT(r.date, '-', r.reply_id))) AS reply_date_id,
+  r.date,
+  r.reply_id,
+  r.threads_user_id,
+  r.media_type,
+  r.text,
+  r.replied_at,
+  r.shortcode,
+  r.permalink,
+  r.has_replies,
+  r.is_reply,
+  r.root_post_id,
+  r.replied_to_id,
+  r.hide_status,
+  root.media_id IS NOT NULL AS is_reply_to_own_post,
+  root.text AS root_post_text,
+  root.permalink AS root_post_permalink,
+  root.published_at AS root_post_published_at,
+  root.media_type AS root_post_media_type
+FROM ${ref("stg_threads_replies")} r
+LEFT JOIN latest_media root
+  ON r.root_post_id = root.media_id

@@ -1,5 +1,21 @@
 const apiDtCutOffDate = '2026-03-01';
 
+// Threads follower demographics arrive tall, one row per breakdown/dimension_value.
+// Each API breakdown is surfaced as its own typed column in stg_threads_follower_demographics
+// and tgt_threads_follower_demographics, and adding an entry here is the only change needed
+// to give a new breakdown a column. tgt_threads_follower_demographics_breakdown_check fails
+// if the API starts returning a breakdown that is not listed, so a new one cannot be silently
+// dropped by the pivot.
+// city and country are deliberately left as one row per value rather than one column per value:
+// they only return the top ~45 per pull and that set churns, so a column per value would mean
+// the table's schema changing whenever a city enters or leaves the top 45.
+const threadsDemographicBreakdowns = [
+  {breakdown: "age",     column: "age_group"},
+  {breakdown: "gender",  column: "gender"},
+  {breakdown: "country", column: "country_code"},
+  {breakdown: "city",    column: "city"}
+];
+
 // Columns checked for "100% NULL across all rows in the window" per target table,
 // i.e. every column from that model's config.columns except keys/discriminators
 // (surrogate ids, date/month, video_id/page_id/post_id/channel_id, associated_post_id,
@@ -112,6 +128,49 @@ const targetAlwaysNullChecks = [
       "comments", "likes", "dislikes", "shares", "red_views",
       "red_watch_time_minutes", "average_view_duration_seconds",
       "average_view_duration_percentage"]
+  },
+  // Threads pulls are irregular, hence INTERVAL 21 DAY. The _daily_change and
+  // days_since_previous_snapshot columns are NULL only on an entity's first
+  // snapshot, so they are non-NULL somewhere in any window covering two or more
+  // pulls and are safe to check. gif_url and hide_status are deliberately absent:
+  // they are 100% NULL in the source today and would fail on day one.
+  {
+    table: "tgt_threads_account_combined",
+    dateColumn: "date",
+    windowInterval: "INTERVAL 21 DAY",
+    columns: ["username", "name", "biography", "profile_picture_url",
+      "is_verified", "followers_count", "followers_count_daily_change",
+      "days_since_previous_snapshot", "likes_daily", "quotes_daily",
+      "replies_daily", "reposts_daily", "views_daily"]
+  },
+  {
+    table: "tgt_threads_media_combined",
+    dateColumn: "date",
+    windowInterval: "INTERVAL 21 DAY",
+    columns: ["text", "media_type", "media_product_type", "media_label",
+      "permalink", "shortcode", "published_at", "is_quote_post", "has_replies",
+      "link_attachment_url", "alt_text", "poll_attachment", "topic_tag",
+      "clicks", "likes", "quotes", "replies", "reposts", "shares", "views",
+      "clicks_daily_change", "likes_daily_change", "quotes_daily_change",
+      "replies_daily_change", "reposts_daily_change", "shares_daily_change",
+      "views_daily_change", "days_since_previous_snapshot"]
+  },
+  {
+    table: "tgt_threads_replies_combined",
+    dateColumn: "date",
+    windowInterval: "INTERVAL 21 DAY",
+    columns: ["media_type", "text", "replied_at", "shortcode", "permalink",
+      "has_replies", "is_reply", "root_post_id", "replied_to_id",
+      "is_reply_to_own_post", "root_post_text", "root_post_permalink",
+      "root_post_published_at", "root_post_media_type"]
+  },
+  {
+    table: "tgt_threads_follower_demographics",
+    dateColumn: "date",
+    windowInterval: "INTERVAL 21 DAY",
+    columns: ["breakdown", "dimension_value", "age_group", "gender",
+      "country_code", "city", "country_name", "follower_count",
+      "follower_count_daily_change", "days_since_previous_snapshot"]
   }
 ];
 
@@ -320,9 +379,8 @@ const stagingAlwaysNullChecks = [
   },
   // Threads pulls are irregular like Instagram's, hence INTERVAL 21 DAY rather
   // than Facebook's 14. Two source columns are deliberately absent from these
-  // lists because they are 100% NULL in the source today and would fail the
-  // assertion on day one: stg_threads_media.gif_url and stg_threads_replies
-  // .hide_status. Revisit once more data has landed.
+  // lists because they are 100% NULL for first run. 
+  // Revisit once more data has landed.
   {
     table: "stg_threads_profile",
     dateColumn: "date",
@@ -368,9 +426,9 @@ const stagingAlwaysNullChecks = [
     table: "stg_threads_follower_demographics",
     dateColumn: "date",
     windowInterval: "INTERVAL 21 DAY",
-    columns: ["breakdown", "dimension_value", "dimension_label",
-      "follower_count"]
+    columns: ["breakdown", "dimension_value", "age_group", "gender",
+      "country_code", "city", "country_name", "follower_count"]
   }
 ];
 
-module.exports = { apiDtCutOffDate, targetAlwaysNullChecks, stagingAlwaysNullChecks };
+module.exports = { apiDtCutOffDate, threadsDemographicBreakdowns, targetAlwaysNullChecks, stagingAlwaysNullChecks };
