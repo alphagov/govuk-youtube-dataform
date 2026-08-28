@@ -1,0 +1,41 @@
+
+-- Pivots the threads_media_insights raw table into one row per (media_id, date).
+-- Values are cumulative lifetime totals; the daily change will be derived in tgt_threads_media_combined.
+config {
+  type: "table",
+  tags: ["staging"],
+  assertions: {
+    uniqueKey: ["media_id", "date"],
+    nonNull: ["media_id", "date"],
+    rowConditions: []
+  },
+  columns: {
+    media_id: "The Threads media (post) ID",
+    date: "YYYY-MM-DD date of this insights snapshot",
+    clicks: "Lifetime number of clicks on the post (always 0 in the source today)",
+    likes: "Lifetime count of likes on the post",
+    quotes: "Lifetime number of times the post was quoted",
+    replies: "Lifetime number of replies to the post",
+    reposts: "Lifetime number of times the post was reposted",
+    shares: "Lifetime number of times the post was shared",
+    views: "Lifetime number of views of the post"
+  }
+}
+
+js {
+  const { maxIfConditionValueNotNull } = require('includes/utils');
+  const { stagingAlwaysNullChecks } = require('includes/constants');
+  const mediaInsightsColumns = stagingAlwaysNullChecks.find(
+    check => check.table === 'stg_threads_media_insights'
+  ).columns;
+}
+
+SELECT
+  media_id,
+  target_date AS date,
+  ${mediaInsightsColumns.map(
+    column => maxIfConditionValueNotNull('metric', column, 'value')
+  ).join(',\n  ')}
+FROM ${ref("raw_threads_media_insights")}
+WHERE period = 'lifetime'
+GROUP BY media_id, target_date

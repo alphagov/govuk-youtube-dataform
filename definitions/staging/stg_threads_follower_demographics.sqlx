@@ -1,0 +1,35 @@
+
+-- Renames target_date -> date and value -> follower_count, and resolves a readable
+-- dimension_label for the country breakdown via lookup_country_code_mapping.
+-- The table stays tall (one row per breakdown/dimension_value) rather than pivoting to
+-- columns, matching the tgt_video_demographics precedent: the dimension values are open-ended
+-- and churn between snapshots, so they belong in rows.
+config {
+  type: "table",
+  tags: ["staging"],
+  assertions: {
+    uniqueKey: ["threads_user_id", "date", "breakdown", "dimension_value"],
+    nonNull: ["threads_user_id", "date", "breakdown", "dimension_value"],
+    rowConditions: []
+  },
+  columns: {
+    threads_user_id: "The Threads user ID",
+    date: "YYYY-MM-DD date of this snapshot",
+    breakdown: "The demographic dimension this row breaks followers down by: age, city, country or gender",
+    dimension_value: "The raw value within the breakdown, e.g. 25-34 for age, F for gender, an ISO country code for country",
+    dimension_label: "Human-readable form of dimension_value; the country name for the country breakdown, otherwise the raw value unchanged",
+    follower_count: "The cumulative number of followers in this dimension_value as at the snapshot date"
+  }
+}
+
+SELECT
+  d.threads_user_id,
+  d.target_date AS date,
+  d.breakdown,
+  d.dimension_value,
+  COALESCE(c.country, d.dimension_value) AS dimension_label,
+  d.value AS follower_count
+FROM ${ref("raw_threads_follower_demographics")} d
+LEFT JOIN ${ref("lookup_country_code_mapping")} c
+  ON d.breakdown = 'country'
+  AND d.dimension_value = c.country_code
