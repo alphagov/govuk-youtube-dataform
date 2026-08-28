@@ -1,0 +1,84 @@
+-- Human-facing reconciliation of the two independent routes to Threads daily engagement, in the
+-- spirit of ver_dt_api_comparison. Nothing here fails a run; it exists to be read.
+--
+-- account route - tgt_threads_account_combined.*_daily, daily totals reported directly by the
+-- account insights endpoint, where date is the day the metric describes
+-- 
+-- media route   - tgt_threads_media_combined.*_daily_change, summed across posts, derived here
+-- from cumulative lifetime totals, where date is the day the data was pulled
+--
+-- The two should broadly track each other, and this view is the only check that the derived
+-- _daily_change logic produces sane numbers. Expect real divergence rather than exact agreement:
+--   - The routes are dated differently (metric day vs pull day), so a media-route figure covering a
+--     multi-day gap is compared against a single day's account figure. Read days_covered alongside
+--     any row before drawing conclusions from it.
+--   - The account route counts activity on all of the account's posts; the media route only covers
+--     posts still present in the media snapshot, so deleted posts drop out of it.
+--   - Lifetime counters can fall, so the media route can legitimately go negative on a day the
+--     account route does not.
+
+config {
+  type: "view",
+  tags: ["verification"],
+  columns: {
+    date: "YYYY-MM-DD date being reconciled",
+    days_covered: "Maximum days_since_previous_snapshot across posts on this date; how wide a window the media route's figures actually span. 1 means the two routes are comparable like for like",
+    posts_contributing: "Number of posts contributing a non-NULL daily change on this date",
+    likes_account: "Likes that day per the account insights endpoint",
+    likes_media: "Sum of likes_daily_change across posts on this date",
+    likes_delta: "likes_media - likes_account",
+    replies_account: "Replies that day per the account insights endpoint",
+    replies_media: "Sum of replies_daily_change across posts on this date",
+    replies_delta: "replies_media - replies_account",
+    reposts_account: "Reposts that day per the account insights endpoint",
+    reposts_media: "Sum of reposts_daily_change across posts on this date",
+    reposts_delta: "reposts_media - reposts_account",
+    views_account: "Views that day per the account insights endpoint",
+    views_media: "Sum of views_daily_change across posts on this date",
+    views_delta: "views_media - views_account",
+    views_pct_diff: "views_delta as a proportion of views_account"
+  }
+}
+
+WITH media_daily AS (
+  SELECT
+    date,
+    MAX(days_since_previous_snapshot) AS days_covered,
+    COUNTIF(views_daily_change IS NOT NULL) AS posts_contributing,
+    SUM(likes_daily_change) AS likes_media,
+    SUM(replies_daily_change) AS replies_media,
+    SUM(reposts_daily_change) AS reposts_media,
+    SUM(views_daily_change) AS views_media
+  FROM ${ref("tgt_threads_media_combined")}
+  WHERE (date >= DATE('1900-01-01') OR date IS NULL)
+  GROUP BY date
+),
+account_daily AS (
+  SELECT
+    date,
+    likes_daily AS likes_account,
+    replies_daily AS replies_account,
+    reposts_daily AS reposts_account,
+    views_daily AS views_account
+  FROM ${ref("tgt_threads_account_combined")}
+  WHERE (date >= DATE('1900-01-01') OR date IS NULL)
+)
+SELECT
+  date,
+  m.days_covered,
+  m.posts_contributing,
+  a.likes_account,
+  m.likes_media,
+  m.likes_media - a.likes_account AS likes_delta,
+  a.replies_account,
+  m.replies_media,
+  m.replies_media - a.replies_account AS replies_delta,
+  a.reposts_account,
+  m.reposts_media,
+  m.reposts_media - a.reposts_account AS reposts_delta,
+  a.views_account,
+  m.views_media,
+  m.views_media - a.views_account AS views_delta,
+  SAFE_DIVIDE(m.views_media - a.views_account, a.views_account) AS views_pct_diff
+FROM account_daily a
+FULL OUTER JOIN media_daily m USING (date)
