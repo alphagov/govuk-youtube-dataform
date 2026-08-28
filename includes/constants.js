@@ -317,6 +317,59 @@ const stagingAlwaysNullChecks = [
     windowInterval: "INTERVAL 21 DAY",
     columns: ["comments", "likes", "reach", "saved", "shares",
       "total_interactions", "views"]
+  },
+  // Threads pulls are irregular like Instagram's, hence INTERVAL 21 DAY rather
+  // than Facebook's 14. Two source columns are deliberately absent from these
+  // lists because they are 100% NULL in the source today and would fail the
+  // assertion on day one: stg_threads_media.gif_url and stg_threads_replies
+  // .hide_status. Revisit once more data has landed.
+  {
+    table: "stg_threads_profile",
+    dateColumn: "date",
+    windowInterval: "INTERVAL 21 DAY",
+    columns: ["username", "name", "biography", "profile_picture_url",
+      "is_verified"]
+  },
+  {
+    table: "stg_threads_account_lifetime",
+    dateColumn: "date",
+    windowInterval: "INTERVAL 21 DAY",
+    columns: ["followers_count"]
+  },
+  {
+    table: "stg_threads_account_insights",
+    dateColumn: "date",
+    windowInterval: "INTERVAL 21 DAY",
+    columns: ["likes", "quotes", "replies", "reposts", "views"]
+  },
+  {
+    table: "stg_threads_media",
+    dateColumn: "date",
+    windowInterval: "INTERVAL 21 DAY",
+    columns: ["text", "media_type", "media_product_type", "media_label",
+      "permalink", "shortcode", "published_at", "is_quote_post", "has_replies",
+      "link_attachment_url", "alt_text", "poll_attachment", "topic_tag"]
+  },
+  {
+    table: "stg_threads_media_insights",
+    dateColumn: "date",
+    windowInterval: "INTERVAL 21 DAY",
+    columns: ["clicks", "likes", "quotes", "replies", "reposts", "shares",
+      "views"]
+  },
+  {
+    table: "stg_threads_replies",
+    dateColumn: "date",
+    windowInterval: "INTERVAL 21 DAY",
+    columns: ["media_type", "text", "replied_at", "shortcode", "permalink",
+      "has_replies", "is_reply", "root_post_id", "replied_to_id"]
+  },
+  {
+    table: "stg_threads_follower_demographics",
+    dateColumn: "date",
+    windowInterval: "INTERVAL 21 DAY",
+    columns: ["breakdown", "dimension_value", "dimension_label",
+      "follower_count"]
   }
 ];
 
