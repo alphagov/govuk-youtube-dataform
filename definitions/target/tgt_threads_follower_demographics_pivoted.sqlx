@@ -124,7 +124,7 @@ js {
   const slots = [1, 2, 3, 4, 5];
 
   // Fixed vocabularies condition on the staging category column (age_group / gender), which is
-  // already NULL on every row of the tgt_threads_follower_demographics. 
+  // already NULL on every row of another breakdown in stg_threads_follower_demographics.
   // Ranked slots condition on rank_in_breakdown.
   // note that syntax for js functions, with byAge as an example. 
   // function name =( function parameters) => (returns) create a list/loop using ageBands.map => 
@@ -168,7 +168,7 @@ WITH demographics AS (
 -- inside these CTEs there is nothing else to add up.
 --
 -- age_total_* equals the sum of the seven band columns because every band the API returns has a
--- column of its own. tgt_threads_follower_demographics_vocabulary_check is what keeps that true:
+-- column of its own. tgt_threads_follower_demographics_pivoted_vocabulary_check keeps that true:
 -- it fails if a band appears that no column covers, rather than letting the total quietly exceed
 -- the columns beside it.
 age_demographics AS (
