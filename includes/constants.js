@@ -1,9 +1,9 @@
 const apiDtCutOffDate = '2026-03-01';
 
 // Threads follower demographics arrive tall, one row per breakdown/dimension_value.
-// Each API breakdown is surfaced as its own typed column in stg_threads_follower_demographics
-// and tgt_threads_follower_demographics, and adding an entry here is the only change needed
-// to give a new breakdown a column. tgt_threads_follower_demographics_breakdown_check fails
+// Each API breakdown is surfaced as its own typed column in stg_threads_follower_demographics,
+// and adding an entry here is the only change needed to give a new breakdown a column.
+// tgt_threads_follower_demographics_pivoted_breakdown_check reads that staging table and fails
 // if the API starts returning a breakdown that is not listed, so a new one cannot be silently
 // dropped by the pivot.
 // city and country are deliberately left as one row per value rather than one column per value:
@@ -20,8 +20,8 @@ const threadsDemographicBreakdowns = [
 // (date, threads_user_id) with every demographic flattened into columns.
 // The age and gender vocabularies are closed sets that appear in full on every snapshot, and
 // tgt_threads_follower_demographics_pivoted gives each value its own column. Listing them here is
-// what lets tgt_threads_follower_demographics_vocabulary_check fail when the API returns an age
-// band or gender code that has no column, rather than letting it vanish silently into the pivot.
+// what lets tgt_threads_follower_demographics_pivoted_vocabulary_check fail when the API returns an
+// age band or gender code that has no column, rather than letting it vanish silently into the pivot.
 // The vocabulary check is the only consumer: the model itself spells its columns out longhand.
 const threadsDemographicPivot = {
   fixed: [
@@ -189,14 +189,6 @@ const targetAlwaysNullChecks = [
       "has_replies", "is_reply", "root_post_id", "replied_to_id",
       "is_reply_to_own_post", "root_post_text", "root_post_permalink",
       "root_post_published_at", "root_post_media_type"]
-  },
-  {
-    table: "tgt_threads_follower_demographics",
-    dateColumn: "date",
-    windowInterval: "INTERVAL 21 DAY",
-    columns: ["breakdown", "dimension_value", "age_group", "gender",
-      "country_code", "city", "country_name", "follower_count",
-      "follower_count_daily_change", "days_since_previous_snapshot"]
   },
   {
     // Every column is populated on every row: all 7 age bands and 3 genders appear on every
