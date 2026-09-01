@@ -16,6 +16,32 @@ const threadsDemographicBreakdowns = [
   {breakdown: "city",    column: "city"}
 ];
 
+// Drives the reporting-shaped tgt_threads_follower_demographics_pivoted, one row per
+// (date, threads_user_id) with every demographic flattened into columns.
+// The age and gender vocabularies are closed sets that appear in full on every snapshot, and
+// tgt_threads_follower_demographics_pivoted gives each value its own column. Listing them here is
+// what lets tgt_threads_follower_demographics_vocabulary_check fail when the API returns an age
+// band or gender code that has no column, rather than letting it vanish silently into the pivot.
+// The vocabulary check is the only consumer: the model itself spells its columns out longhand.
+const threadsDemographicPivot = {
+  fixed: [
+    {breakdown: "age", column: "age_group", prefix: "age", values: [
+      {value: "13-17", suffix: "13_17"},
+      {value: "18-24", suffix: "18_24"},
+      {value: "25-34", suffix: "25_34"},
+      {value: "35-44", suffix: "35_44"},
+      {value: "45-54", suffix: "45_54"},
+      {value: "55-64", suffix: "55_64"},
+      {value: "65+",   suffix: "65_plus"}
+    ]},
+    {breakdown: "gender", column: "gender", prefix: "gender", values: [
+      {value: "F", suffix: "f"},
+      {value: "M", suffix: "m"},
+      {value: "U", suffix: "u"}
+    ]}
+  ]
+};
+
 // Columns checked for "100% NULL across all rows in the window" per target table,
 // i.e. every column from that model's config.columns except keys/discriminators
 // (surrogate ids, date/month, video_id/page_id/post_id/channel_id, associated_post_id,
@@ -171,6 +197,43 @@ const targetAlwaysNullChecks = [
     columns: ["breakdown", "dimension_value", "age_group", "gender",
       "country_code", "city", "country_name", "follower_count",
       "follower_count_daily_change", "days_since_previous_snapshot"]
+  },
+  {
+    // Every column is populated on every row: all 7 age bands and 3 genders appear on every
+    // snapshot, and country/city return 45 values per pull so slots 1-5 always fill.
+    // Listed out longhand to match the model, which is also written longhand.
+    table: "tgt_threads_follower_demographics_pivoted",
+    dateColumn: "date",
+    windowInterval: "INTERVAL 21 DAY",
+    columns: ["age_13_17_follower_count", "age_18_24_follower_count",
+      "age_25_34_follower_count", "age_35_44_follower_count",
+      "age_45_54_follower_count", "age_55_64_follower_count",
+      "age_65_plus_follower_count", "age_total_follower_count",
+      "age_13_17_follower_percentage", "age_18_24_follower_percentage",
+      "age_25_34_follower_percentage", "age_35_44_follower_percentage",
+      "age_45_54_follower_percentage", "age_55_64_follower_percentage",
+      "age_65_plus_follower_percentage", "age_total_follower_percentage",
+      "gender_f_follower_count", "gender_m_follower_count",
+      "gender_u_follower_count", "gender_total_follower_count",
+      "gender_f_follower_percentage", "gender_m_follower_percentage",
+      "gender_u_follower_percentage", "gender_total_follower_percentage",
+      "country_code_1", "country_name_1", "country_code_2", "country_name_2",
+      "country_code_3", "country_name_3", "country_code_4", "country_name_4",
+      "country_code_5", "country_name_5",
+      "country_code_1_follower_count", "country_code_2_follower_count",
+      "country_code_3_follower_count", "country_code_4_follower_count",
+      "country_code_5_follower_count", "country_code_total_follower_count",
+      "country_code_1_follower_percentage", "country_code_2_follower_percentage",
+      "country_code_3_follower_percentage", "country_code_4_follower_percentage",
+      "country_code_5_follower_percentage", "country_code_total_follower_percentage",
+      "country_follower_distribution_json",
+      "city_1", "city_2", "city_3", "city_4", "city_5",
+      "city_1_follower_count", "city_2_follower_count", "city_3_follower_count",
+      "city_4_follower_count", "city_5_follower_count", "city_total_follower_count",
+      "city_1_follower_percentage", "city_2_follower_percentage",
+      "city_3_follower_percentage", "city_4_follower_percentage",
+      "city_5_follower_percentage", "city_total_follower_percentage",
+      "city_follower_distribution_json"]
   }
 ];
 
@@ -431,4 +494,4 @@ const stagingAlwaysNullChecks = [
   }
 ];
 
-module.exports = { apiDtCutOffDate, threadsDemographicBreakdowns, targetAlwaysNullChecks, stagingAlwaysNullChecks };
+module.exports = { apiDtCutOffDate, threadsDemographicBreakdowns, threadsDemographicPivot, targetAlwaysNullChecks, stagingAlwaysNullChecks };
