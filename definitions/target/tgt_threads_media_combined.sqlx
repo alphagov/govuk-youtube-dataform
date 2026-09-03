@@ -1,0 +1,101 @@
+-- Core Threads media table created through a spine of stg_threads_media and
+-- stg_threads_media_insights joined on media_id and date.
+--
+-- media_product_type is always THREADS in the source.
+--
+-- Every insights metric is a cumulative lifetime total, so each carries a matching _daily_change
+-- column computed from the entity's previous snapshot. 
+config {
+  type: "table",
+  tags: ["target","threads"],
+  bigquery: {
+    partitionBy: "date",
+    clusterBy: ["media_type"],
+    requirePartitionFilter: true
+  },
+  columns: {
+    media_date_id: "Surrogate key: MD5 hash of date-media_id",
+    date: "YYYY-MM-DD date of data",
+    media_id: "The Threads media (post) ID",
+    threads_user_id: "The Threads user ID that owns the media",
+    text: "The text body of the post",
+    media_type: "The underlying media type, e.g. TEXT_POST, IMAGE, VIDEO, CAROUSEL_ALBUM",
+    media_product_type: "The Threads surface the media was published to (always THREADS today)",
+    media_label: "Human-readable label for this media_type/media_product_type combination",
+    permalink: "The public URL of the media",
+    shortcode: "The short code identifying the media in its permalink",
+    published_at: "The timestamp the media was published",
+    is_quote_post: "Whether the post quotes another post",
+    has_replies: "Whether the post has replies",
+    link_attachment_url: "The URL of a link attached to the post, if any",
+    gif_url: "The URL of a GIF attached to the post, if any (always NULL in the source today)",
+    alt_text: "The alt text describing the post's media, if any",
+    poll_attachment: "The poll attached to the post, if any",
+    topic_tag: "The topic tag applied to the post, if any",
+    clicks: "Lifetime number of clicks on the post (always 0 in the source today), lifetime value",
+    likes: "Lifetime count of likes on the post, lifetime value",
+    quotes: "Lifetime number of times the post was quoted, lifetime value",
+    replies: "Lifetime number of replies to the post, lifetime value",
+    reposts: "Lifetime number of times the post was reposted, lifetime value",
+    shares: "Lifetime number of times the post was shared, lifetime value",
+    views: "Lifetime number of views of the post, lifetime value",
+    clicks_daily_change: "Change in clicks since this post's previous snapshot; NULL on its first snapshot",
+    likes_daily_change: "Change in likes since this post's previous snapshot; NULL on its first snapshot, and legitimately negative when likes are withdrawn",
+    quotes_daily_change: "Change in quotes since this post's previous snapshot; NULL on its first snapshot",
+    replies_daily_change: "Change in replies since this post's previous snapshot; NULL on its first snapshot, and legitimately negative when replies are deleted",
+    reposts_daily_change: "Change in reposts since this post's previous snapshot; NULL on its first snapshot, and legitimately negative when reposts are withdrawn",
+    shares_daily_change: "Change in shares since this post's previous snapshot; NULL on its first snapshot",
+    views_daily_change: "Change in views since this post's previous snapshot; NULL on its first snapshot",
+    days_since_previous_snapshot: "Days between this snapshot and this post's previous one; the window each _daily_change value actually covers. NULL on the first snapshot"
+  }
+}
+
+js {
+  const { lifetimeDailyChange, daysSincePreviousSnapshot } = require('includes/utils');
+  const { stagingAlwaysNullChecks } = require('includes/constants');
+  const insightsColumns = stagingAlwaysNullChecks.find(
+    check => check.table === 'stg_threads_media_insights'
+  ).columns;
+}
+
+WITH insights_change AS (
+  SELECT
+    media_id,
+    date,
+    ${insightsColumns.join(',\n    ')},
+    ${insightsColumns.map(
+      column => lifetimeDailyChange(column, ['media_id'])
+    ).join(',\n    ')},
+    ${daysSincePreviousSnapshot(['media_id'])}
+  FROM ${ref("stg_threads_media_insights")}
+),
+GRAIN_SPINE AS (
+  SELECT media_id, date FROM ${ref("stg_threads_media")}
+  UNION DISTINCT
+  SELECT media_id, date FROM ${ref("stg_threads_media_insights")}
+)
+SELECT
+  TO_HEX(MD5(CONCAT(spine.date, '-', spine.media_id))) AS media_date_id,
+  spine.date,
+  spine.media_id,
+  m.threads_user_id,
+  m.text,
+  m.media_type,
+  m.media_product_type,
+  m.media_label,
+  m.permalink,
+  m.shortcode,
+  m.published_at,
+  m.is_quote_post,
+  m.has_replies,
+  m.link_attachment_url,
+  m.gif_url,
+  m.alt_text,
+  m.poll_attachment,
+  m.topic_tag,
+  ${insightsColumns.map(column => `i.${column}`).join(',\n  ')},
+  ${insightsColumns.map(column => `i.${column}_daily_change`).join(',\n  ')},
+  i.days_since_previous_snapshot
+FROM GRAIN_SPINE spine
+LEFT JOIN ${ref("stg_threads_media")} m USING (media_id, date)
+LEFT JOIN insights_change i USING (media_id, date)

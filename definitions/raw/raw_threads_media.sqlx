@@ -1,0 +1,54 @@
+
+-- A table that contains the raw Threads media (post) metadata snapshot. Every pull re-snapshots the entire post catalogue (not a delta), so the same media_id recurs across many target_dates.
+-- media_product_type is always THREADS, so unlike Instagram there is no feed/reels surface split to model downstream.
+-- gif_url is 100% NULL in the source today and is therefore excluded from the always-null assertion lists.
+config {
+  type: "view",
+  tags: ["raw"],
+  assertions: {
+    uniqueKey: ["media_id", "target_date"],
+    nonNull: ["media_id", "target_date", "threads_user_id"],
+    rowConditions: []
+  },
+  columns: {
+    threads_user_id: "The Threads user ID that owns the media",
+    media_id: "The Threads media (post) ID",
+    media_type: "The underlying media type, e.g. TEXT_POST, IMAGE, VIDEO, CAROUSEL_ALBUM",
+    media_product_type: "The Threads surface the media was published to (always THREADS today)",
+    permalink: "The public URL of the media",
+    text: "The text body of the post",
+    timestamp: "The timestamp the media was published",
+    shortcode: "The short code identifying the media in its permalink",
+    is_quote_post: "Whether the post quotes another post",
+    has_replies: "Whether the post has replies",
+    link_attachment_url: "The URL of a link attached to the post, if any",
+    gif_url: "The URL of a GIF attached to the post, if any (always NULL in the source today)",
+    alt_text: "The alt text describing the post's media, if any",
+    poll_attachment: "The poll attached to the post, if any",
+    topic_tag: "The topic tag applied to the post, if any",
+    target_date: "YYYY-MM-DD date of this metadata snapshot",
+    ingestion_timestamp: "The timestamp this row was ingested into BigQuery"
+  }
+}
+
+SELECT
+  CAST(threads_user_id AS STRING) AS threads_user_id,
+  CAST(media_id AS STRING) AS media_id,
+  CAST(media_type AS STRING) AS media_type,
+  CAST(media_product_type AS STRING) AS media_product_type,
+  CAST(permalink AS STRING) AS permalink,
+  CAST(text AS STRING) AS text,
+  CAST(timestamp AS TIMESTAMP) AS timestamp,
+  CAST(shortcode AS STRING) AS shortcode,
+  CAST(is_quote_post AS BOOL) AS is_quote_post,
+  CAST(has_replies AS BOOL) AS has_replies,
+  CAST(link_attachment_url AS STRING) AS link_attachment_url,
+  CAST(gif_url AS STRING) AS gif_url,
+  CAST(alt_text AS STRING) AS alt_text,
+  CAST(poll_attachment AS STRING) AS poll_attachment,
+  CAST(topic_tag AS STRING) AS topic_tag,
+  CAST(target_date AS DATE) AS target_date,
+  CAST(ingestion_timestamp AS TIMESTAMP) AS ingestion_timestamp
+FROM
+  `gds-social-data.govuk_threads.threads_media`
+WHERE media_id IS NOT NULL

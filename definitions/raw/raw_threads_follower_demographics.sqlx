@@ -1,0 +1,34 @@
+
+-- A table that contains the raw Threads follower demographics (tall shape, one row per breakdown/dimension_value per snapshot).
+-- breakdown is one of age, city, country or gender. Values are cumulative follower counts, not daily figures.
+-- The city and country breakdowns only return the top ~45 values per snapshot and that set churns between pulls, so a dimension_value can legitimately disappear and reappear.
+config {
+  type: "view",
+  tags: ["raw"],
+  assertions: {
+    uniqueKey: ["threads_user_id", "target_date", "breakdown", "dimension_value"],
+    nonNull: ["threads_user_id", "target_date", "breakdown", "dimension_value"],
+    rowConditions: []
+  },
+  columns: {
+    threads_user_id: "The Threads user ID",
+    breakdown: "The demographic dimension this row breaks followers down by: age, city, country or gender",
+    dimension_value: "The value within the breakdown, e.g. 25-34 for age, F for gender, an ISO country code for country",
+    value: "The cumulative number of followers in this dimension_value as at the snapshot date",
+    target_date: "YYYY-MM-DD date of this snapshot",
+    ingestion_timestamp: "The timestamp this row was ingested into BigQuery"
+  }
+}
+
+SELECT
+  CAST(threads_user_id AS STRING) AS threads_user_id,
+  CAST(breakdown AS STRING) AS breakdown,
+  CAST(dimension_value AS STRING) AS dimension_value,
+  CAST(value AS INT64) AS value,
+  CAST(target_date AS DATE) AS target_date,
+  CAST(ingestion_timestamp AS TIMESTAMP) AS ingestion_timestamp
+FROM
+  `gds-social-data.govuk_threads.threads_follower_demographics`
+WHERE threads_user_id IS NOT NULL
+  AND breakdown IS NOT NULL
+  AND dimension_value IS NOT NULL

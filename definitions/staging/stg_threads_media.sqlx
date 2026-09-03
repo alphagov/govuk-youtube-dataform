@@ -1,0 +1,53 @@
+
+-- Renames target_date -> date and timestamp -> published_at, and joins the media type
+-- lookup, for the Threads media (post) metadata snapshot.
+config {
+  type: "table",
+  tags: ["staging"],
+  assertions: {
+    uniqueKey: ["media_id", "date"],
+    nonNull: ["media_id", "date", "threads_user_id"],
+    rowConditions: []
+  },
+  columns: {
+    media_id: "The Threads media (post) ID",
+    date: "YYYY-MM-DD date of this metadata snapshot",
+    threads_user_id: "The Threads user ID that owns the media",
+    text: "The text body of the post",
+    media_type: "The underlying media type, e.g. TEXT_POST, IMAGE, VIDEO, CAROUSEL_ALBUM",
+    media_product_type: "The Threads surface the media was published to (always THREADS today)",
+    media_label: "Human-readable label for this media_type/media_product_type combination",
+    permalink: "The public URL of the media",
+    shortcode: "The short code identifying the media in its permalink",
+    published_at: "The timestamp the media was published",
+    is_quote_post: "Whether the post quotes another post",
+    has_replies: "Whether the post has replies",
+    link_attachment_url: "The URL of a link attached to the post, if any",
+    gif_url: "The URL of a GIF attached to the post, if any (always NULL in the source today)",
+    alt_text: "The alt text describing the post's media, if any",
+    poll_attachment: "The poll attached to the post, if any",
+    topic_tag: "The topic tag applied to the post, if any"
+  }
+}
+
+SELECT
+  m.media_id,
+  m.target_date AS date,
+  m.threads_user_id,
+  m.text,
+  m.media_type,
+  m.media_product_type,
+  l.media_label,
+  m.permalink,
+  m.shortcode,
+  m.timestamp AS published_at,
+  m.is_quote_post,
+  m.has_replies,
+  m.link_attachment_url,
+  m.gif_url,
+  m.alt_text,
+  m.poll_attachment,
+  m.topic_tag
+FROM ${ref("raw_threads_media")} m
+LEFT JOIN ${ref("lookup_threads_media_type_mapping")} l
+  USING (media_type, media_product_type)

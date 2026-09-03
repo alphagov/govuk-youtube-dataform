@@ -1,0 +1,85 @@
+-- Core Threads account table, combining profile metadata, lifetime totals and
+-- account insights into a single (threads_user_id, date) grain table.
+--
+-- date means two different things depending on which source populated the row, and this is the
+-- most important caveat in this model. For stg_threads_profile and stg_threads_account_lifetime it
+-- is the date the snapshot was pulled; for stg_threads_account_insights it is the day the metric
+-- actually describes. Pulls are irregular (1-5 days apart so far) while insights arrive one row per
+-- day, so rows where the *_daily metrics are populated but followers_count is NULL, and vice versa,
+-- are expected rather than a data quality problem.
+--
+-- Two families of engagement number live side by side here and must not be conflated:
+--   *_daily            - daily totals reported directly by the insights endpoint, not computed
+--   *_daily_change     - change since the previous snapshot, computed here from cumulative totals
+-- followers_count is cumulative, so only it carries a computed change. The *_daily metrics can be
+-- reconciled against the summed media-level daily changes in tgt_threads_media_combined - see
+-- ver_threads_engagement_reconciliation.
+config {
+  type: "table",
+  tags: ["target","threads"],
+  bigquery: {
+    partitionBy: "date",
+    clusterBy: ["threads_user_id"],
+    requirePartitionFilter: true
+  },
+  columns: {
+    account_date_id: "Surrogate key: MD5 hash of date-threads_user_id",
+    date: "YYYY-MM-DD date of data; the snapshot pull date for profile and lifetime fields, the day described for the *_daily fields",
+    threads_user_id: "The Threads user ID",
+    username: "The account's Threads handle",
+    name: "The display name of the account",
+    biography: "The account's bio text",
+    profile_picture_url: "The URL of the account's profile picture",
+    is_verified: "Whether the account is verified on Threads",
+    followers_count: "Total number of followers as at this snapshot, cumulative lifetime value",
+    followers_count_daily_change: "Change in followers_count since the account's previous snapshot; NULL on the first snapshot, and spans days_since_previous_snapshot days rather than exactly one",
+    days_since_previous_snapshot: "Days between this snapshot and the previous one for the followers_count series; NULL on the first snapshot and on rows sourced only from account insights",
+    likes_daily: "Number of likes across the account's posts that day, daily value reported by the API",
+    quotes_daily: "Number of times the account's posts were quoted that day, daily value reported by the API",
+    replies_daily: "Number of replies to the account's posts that day, daily value reported by the API",
+    reposts_daily: "Number of times the account's posts were reposted that day, daily value reported by the API",
+    views_daily: "Number of views across the account's posts that day, daily value reported by the API"
+  }
+}
+
+js {
+  const { lifetimeDailyChange, daysSincePreviousSnapshot } = require('includes/utils');
+}
+
+WITH lifetime_change AS (
+  SELECT
+    threads_user_id,
+    date,
+    followers_count,
+    ${lifetimeDailyChange('followers_count', ['threads_user_id'])},
+    ${daysSincePreviousSnapshot(['threads_user_id'])}
+  FROM ${ref("stg_threads_account_lifetime")}
+),
+GRAIN_SPINE AS (
+  SELECT threads_user_id, date FROM ${ref("stg_threads_profile")}
+  UNION DISTINCT
+  SELECT threads_user_id, date FROM ${ref("stg_threads_account_lifetime")}
+  UNION DISTINCT
+  SELECT threads_user_id, date FROM ${ref("stg_threads_account_insights")}
+)
+SELECT
+  TO_HEX(MD5(CONCAT(spine.date, '-', spine.threads_user_id))) AS account_date_id,
+  spine.date,
+  spine.threads_user_id,
+  p.username,
+  p.name,
+  p.biography,
+  p.profile_picture_url,
+  p.is_verified,
+  l.followers_count,
+  l.followers_count_daily_change,
+  l.days_since_previous_snapshot,
+  i.likes AS likes_daily,
+  i.quotes AS quotes_daily,
+  i.replies AS replies_daily,
+  i.reposts AS reposts_daily,
+  i.views AS views_daily
+FROM GRAIN_SPINE spine
+LEFT JOIN ${ref("stg_threads_profile")} p USING (threads_user_id, date)
+LEFT JOIN lifetime_change l USING (threads_user_id, date)
+LEFT JOIN ${ref("stg_threads_account_insights")} i USING (threads_user_id, date)

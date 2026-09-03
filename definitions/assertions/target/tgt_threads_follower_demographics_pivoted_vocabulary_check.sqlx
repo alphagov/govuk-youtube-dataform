@@ -1,0 +1,26 @@
+-- Safety net for tgt_threads_follower_demographics_pivoted. That model emits one column per age
+-- band and gender code, and a pivot can only emit columns it knows about at compile time, so a
+-- value the API starts returning that is not in threadsDemographicPivot would vanish silently
+-- rather than error. This fails instead, naming the unrecognised value.
+--
+-- Reads the tall staging table rather than the pivoted model itself, for the same reason as
+-- tgt_threads_follower_demographics_pivoted_breakdown_check: after the pivot the value is gone.
+config {
+  type: "assertion",
+  description: "Fails if the Threads API returns an age band or gender code with no pivoted column"
+}
+
+js {
+  const { threadsDemographicPivot } = require('includes/constants');
+  const vocabulary = threadsDemographicPivot.fixed.map(fixed => `(
+    ${fixed.column} IS NOT NULL
+    AND ${fixed.column} NOT IN (${fixed.values.map(value => `'${value.value}'`).join(', ')})
+  )`);
+}
+
+SELECT DISTINCT
+  breakdown,
+  dimension_value
+FROM ${ref("stg_threads_follower_demographics")}
+WHERE
+  ${vocabulary.join('\n  OR ')}
