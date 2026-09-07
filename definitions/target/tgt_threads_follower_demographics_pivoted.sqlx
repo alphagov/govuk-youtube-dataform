@@ -1,0 +1,286 @@
+-- Reporting-shaped Threads follower demographics: one row per (date, threads_user_id) 
+--
+-- One CTE per demographic, each filtered to its own breakdown. The repetitive column groups are
+-- mapped over the small value lists declared in the js block below rather than being written out
+-- 55 times; those lists are kept in this file, not in constants.js, for readability. 
+--
+-- country, city:
+--  the API returns a churning top ~45 per pull, so a column per value would
+--  change this table's schema whenever a city enters or leaves the list. These
+--  become positional slots instead: country_code_1 is whichever country led on
+--  that date, NOT a fixed country. Slot membership can change between dates.
+--
+-- The *_total_* columns are the sum of the columns actually displayed for that demographic, not of
+-- everything the API reported. That distinction is the easiest thing here to get wrong:
+--
+-- age, gender:
+--  every band and code is displayed, so the totals are the whole breakdown and the percentage
+--  totals come to 100. Age is NOT a top-5 group despite having more than 5 values; scoping it by
+--  rank would wrongly give 89.87% instead of 100%.
+--
+-- country, city:
+--  only 5 of ~45 values are displayed, so the totals cover just those 5 and the percentage totals
+--  come to roughly 94% and 45% respectively. city_total_follower_count is therefore NOT every
+--  follower with a known city.
+--
+-- The two *_follower_distribution_json columns are the exception to all of the above: they carry
+-- EVERY reported value for their breakdown, roughly 45 entries, in descending follower order,
+-- {rank, code/city, name, follower_count, follower_percentage}. Stored as a STRING.
+--
+-- Percentages are within-breakdown: each is divided by that breakdown's own total for the date, so
+-- a group displayed in full sums to 100. This matters most for city, whose 45 values covered only
+-- ~30% of the account's followers on 2026-08-28 (25,859 of 87,346)
+
+config {
+  type: "table",
+  tags: ["target","threads"],
+  bigquery: {
+    partitionBy: "date",
+    requirePartitionFilter: true
+  },
+  columns: {
+    simplified_demographic_date_id: "Surrogate key: MD5 hash of date-threads_user_id, unique at row grain",
+    date: "YYYY-MM-DD date of data",
+    threads_user_id: "The Threads user ID",
+    age_13_17_follower_count: "Followers aged 13-17 as at this snapshot, cumulative lifetime value",
+    age_18_24_follower_count: "Followers aged 18-24 as at this snapshot, cumulative lifetime value",
+    age_25_34_follower_count: "Followers aged 25-34 as at this snapshot, cumulative lifetime value",
+    age_35_44_follower_count: "Followers aged 35-44 as at this snapshot, cumulative lifetime value",
+    age_45_54_follower_count: "Followers aged 45-54 as at this snapshot, cumulative lifetime value",
+    age_55_64_follower_count: "Followers aged 55-64 as at this snapshot, cumulative lifetime value",
+    age_65_plus_follower_count: "Followers aged 65 and over as at this snapshot, cumulative lifetime value",
+    age_total_follower_count: "Sum of the seven age band counts above. Every age band is displayed, so this is all followers with a known age band on this date",
+    age_13_17_follower_percentage: "Followers aged 13-17 as a percentage (0-100) of all followers with a known age band on this date",
+    age_18_24_follower_percentage: "Followers aged 18-24 as a percentage (0-100) of all followers with a known age band on this date",
+    age_25_34_follower_percentage: "Followers aged 25-34 as a percentage (0-100) of all followers with a known age band on this date",
+    age_35_44_follower_percentage: "Followers aged 35-44 as a percentage (0-100) of all followers with a known age band on this date",
+    age_45_54_follower_percentage: "Followers aged 45-54 as a percentage (0-100) of all followers with a known age band on this date",
+    age_55_64_follower_percentage: "Followers aged 55-64 as a percentage (0-100) of all followers with a known age band on this date",
+    age_65_plus_follower_percentage: "Followers aged 65 and over as a percentage (0-100) of all followers with a known age band on this date",
+    age_total_follower_percentage: "Sum of the seven age band percentages above. Expected to be 100, because every age band is displayed",
+    gender_f_follower_count: "Followers with gender code F as at this snapshot, cumulative lifetime value",
+    gender_m_follower_count: "Followers with gender code M as at this snapshot, cumulative lifetime value",
+    gender_u_follower_count: "Followers with gender code U (undisclosed) as at this snapshot, cumulative lifetime value",
+    gender_total_follower_count: "Sum of the three gender counts above. Every gender code is displayed, so this is all followers with a known gender on this date",
+    gender_f_follower_percentage: "Followers with gender code F as a percentage (0-100) of all followers with a known gender on this date",
+    gender_m_follower_percentage: "Followers with gender code M as a percentage (0-100) of all followers with a known gender on this date",
+    gender_u_follower_percentage: "Followers with gender code U (undisclosed) as a percentage (0-100) of all followers with a known gender on this date",
+    gender_total_follower_percentage: "Sum of the three gender percentages above. Expected to be 100, because every gender code is displayed",
+    country_code_1: "ISO code of the country with the most followers on this date. Positional, not a fixed country",
+    country_name_1: "Country name for country_code_1, via lookup_country_code_mapping",
+    country_code_2: "ISO code of the country with the 2nd most followers on this date. Positional, not a fixed country",
+    country_name_2: "Country name for country_code_2, via lookup_country_code_mapping",
+    country_code_3: "ISO code of the country with the 3rd most followers on this date. Positional, not a fixed country",
+    country_name_3: "Country name for country_code_3, via lookup_country_code_mapping",
+    country_code_4: "ISO code of the country with the 4th most followers on this date. Positional, not a fixed country",
+    country_name_4: "Country name for country_code_4, via lookup_country_code_mapping",
+    country_code_5: "ISO code of the country with the 5th most followers on this date. Positional, not a fixed country",
+    country_name_5: "Country name for country_code_5, via lookup_country_code_mapping",
+    country_code_1_follower_count: "Followers in country_code_1 as at this snapshot, cumulative lifetime value",
+    country_code_2_follower_count: "Followers in country_code_2 as at this snapshot, cumulative lifetime value",
+    country_code_3_follower_count: "Followers in country_code_3 as at this snapshot, cumulative lifetime value",
+    country_code_4_follower_count: "Followers in country_code_4 as at this snapshot, cumulative lifetime value",
+    country_code_5_follower_count: "Followers in country_code_5 as at this snapshot, cumulative lifetime value",
+    country_code_total_follower_count: "Sum of the five country counts above. Only the top 5 of roughly 45 reported countries are displayed, so this is NOT all followers with a known country",
+    country_code_1_follower_percentage: "Followers in country_code_1 as a percentage (0-100) of all followers with a known country on this date",
+    country_code_2_follower_percentage: "Followers in country_code_2 as a percentage (0-100) of all followers with a known country on this date",
+    country_code_3_follower_percentage: "Followers in country_code_3 as a percentage (0-100) of all followers with a known country on this date",
+    country_code_4_follower_percentage: "Followers in country_code_4 as a percentage (0-100) of all followers with a known country on this date",
+    country_code_5_follower_percentage: "Followers in country_code_5 as a percentage (0-100) of all followers with a known country on this date",
+    country_code_total_follower_percentage: "Sum of the five country percentages above, i.e. the share of followers with a known country that the displayed top 5 account for. Around 94 rather than 100, because only 5 of roughly 45 countries are displayed",
+    country_follower_distribution_json: "JSON string array of EVERY reported country for this date, roughly 45 entries, ordered by descending follower_count. Each entry is {rank, country_code, country_name, follower_count, follower_percentage}. Unlike the country_code_N slots this is the full distribution, so its follower_count values sum to all followers with a known country",
+    city_1: "The city with the most followers on this date, e.g. 'London, England'. Positional, not a fixed city",
+    city_2: "The city with the 2nd most followers on this date. Positional, not a fixed city",
+    city_3: "The city with the 3rd most followers on this date. Positional, not a fixed city",
+    city_4: "The city with the 4th most followers on this date. Positional, not a fixed city",
+    city_5: "The city with the 5th most followers on this date. Positional, not a fixed city",
+    city_1_follower_count: "Followers in city_1 as at this snapshot, cumulative lifetime value",
+    city_2_follower_count: "Followers in city_2 as at this snapshot, cumulative lifetime value",
+    city_3_follower_count: "Followers in city_3 as at this snapshot, cumulative lifetime value",
+    city_4_follower_count: "Followers in city_4 as at this snapshot, cumulative lifetime value",
+    city_5_follower_count: "Followers in city_5 as at this snapshot, cumulative lifetime value",
+    city_total_follower_count: "Sum of the five city counts above. Only the top 5 of roughly 45 reported cities are displayed, so this is NOT all followers with a known city",
+    city_1_follower_percentage: "Followers in city_1 as a percentage (0-100) of all followers with a known city on this date, a base covering only ~30% of the account's followers",
+    city_2_follower_percentage: "Followers in city_2 as a percentage (0-100) of all followers with a known city on this date, a base covering only ~30% of the account's followers",
+    city_3_follower_percentage: "Followers in city_3 as a percentage (0-100) of all followers with a known city on this date, a base covering only ~30% of the account's followers",
+    city_4_follower_percentage: "Followers in city_4 as a percentage (0-100) of all followers with a known city on this date, a base covering only ~30% of the account's followers",
+    city_5_follower_percentage: "Followers in city_5 as a percentage (0-100) of all followers with a known city on this date, a base covering only ~30% of the account's followers",
+    city_total_follower_percentage: "Sum of the five city percentages above, i.e. the share of followers with a known city that the displayed top 5 account for. Around 45 rather than 100, because only 5 of roughly 45 cities are displayed",
+    city_follower_distribution_json: "JSON string array of EVERY reported city for this date, roughly 45 entries, ordered by descending follower_count. Each entry is {rank, city, follower_count, follower_percentage}. Unlike the city_N slots this is the full distribution, so its follower_count values sum to all followers with a known city"
+  }
+}
+
+js {
+  const { maxIfConditionValueNotNull } = require('includes/utils');
+
+  // [api value, column-name suffix] for the two closed vocabularies, and the positional slot
+  // numbers for the two ranked breakdowns. Kept here rather than in constants.js so this file
+  // shows both the vocabulary and the SQL it turns into.
+  // slots will be used as part of the conditional maxIfConditionValueNotNull
+  const ageBands = [['13-17', '13_17'], ['18-24', '18_24'], ['25-34', '25_34'],
+                    ['35-44', '35_44'], ['45-54', '45_54'], ['55-64', '55_64'],
+                    ['65+', '65_plus']];
+  const genders = [['F', 'f'], ['M', 'm'], ['U', 'u']];
+  const slots = [1, 2, 3, 4, 5];
+
+  // Fixed vocabularies condition on the staging category column (age_group / gender), which is
+  // already NULL on every row of another breakdown in stg_threads_follower_demographics.
+  // Ranked slots condition on rank_in_breakdown.
+  // note that syntax for js functions, with byAge as an example. 
+  // function name =( function parameters) => (returns) create a list/loop using ageBands.map => 
+  // MIXifCOnditionalValueNotNull
+  const byAge = (valueColumn, suffixTemplate) => ageBands.map(([value, suffix]) =>
+    maxIfConditionValueNotNull('age_group', value, valueColumn, suffixTemplate(suffix)));
+  const byGender = (valueColumn, suffixTemplate) => genders.map(([value, suffix]) =>
+    maxIfConditionValueNotNull('gender', value, valueColumn, suffixTemplate(suffix)));
+  const bySlot = (valueColumn, suffixTemplate) => slots.map(slot =>
+    maxIfConditionValueNotNull('rank_in_breakdown', slot, valueColumn, suffixTemplate(slot)));
+}
+
+-- One row per (date, threads_user_id, breakdown, dimension value), carrying that value's share of
+-- its own breakdown and its position within it. The windowed SUM is the percentage denominator, so
+-- every percentage below is a share of its breakdown rather than of the whole account. Note all columns
+-- will be emptry bar the demographic being returned for that row 
+WITH demographics AS (
+  SELECT
+    threads_user_id,
+    date,
+    breakdown,
+    dimension_value,
+    age_group,
+    gender,
+    country_code,
+    country_name,
+    city,
+    follower_count,
+    100 * SAFE_DIVIDE(
+      follower_count,
+      SUM(follower_count) OVER (PARTITION BY threads_user_id, date, breakdown)
+    ) AS follower_percentage,
+    ROW_NUMBER() OVER (
+      PARTITION BY threads_user_id, date, breakdown
+      ORDER BY follower_count DESC, dimension_value
+    ) AS rank_in_breakdown
+  FROM ${ref("stg_threads_follower_demographics")}
+),
+
+-- Filtering each CTE to one breakdown is what lets the age and gender totals be a plain SUM:
+-- inside these CTEs there is nothing else to add up.
+--
+-- age_total_* equals the sum of the seven band columns because every band the API returns has a
+-- column of its own. tgt_threads_follower_demographics_pivoted_vocabulary_check keeps that true:
+-- it fails if a band appears that no column covers, rather than letting the total quietly exceed
+-- the columns beside it.
+age_demographics AS (
+  SELECT
+    threads_user_id,
+    date,
+    ${byAge('follower_count', suffix => `age_${suffix}_follower_count`).join(',\n    ')},
+    SUM(follower_count) AS age_total_follower_count,
+    ${byAge('follower_percentage', suffix => `age_${suffix}_follower_percentage`).join(',\n    ')},
+    SUM(follower_percentage) AS age_total_follower_percentage
+  FROM demographics
+  WHERE breakdown = 'age'
+  GROUP BY threads_user_id, date
+),
+
+gender_demographics AS (
+  SELECT
+    threads_user_id,
+    date,
+    ${byGender('follower_count', suffix => `gender_${suffix}_follower_count`).join(',\n    ')},
+    SUM(follower_count) AS gender_total_follower_count,
+    ${byGender('follower_percentage', suffix => `gender_${suffix}_follower_percentage`).join(',\n    ')},
+    SUM(follower_percentage) AS gender_total_follower_percentage
+  FROM demographics
+  WHERE breakdown = 'gender'
+  GROUP BY threads_user_id, date
+),
+
+-- Note the deliberate asymmetry in the two ranked CTEs below: the slot columns and the totals are
+-- scoped to the top 5, but the JSON ARRAY_AGG is not. The JSON carries every reported value, which
+-- is the entire reason those two columns exist.
+country_demographics AS (
+  SELECT
+    threads_user_id,
+    date,
+    ${slots.flatMap(slot => [
+      maxIfConditionValueNotNull('rank_in_breakdown', slot, 'country_code', `country_code_${slot}`),
+      maxIfConditionValueNotNull('rank_in_breakdown', slot, 'country_name', `country_name_${slot}`)
+    ]).join(',\n    ')},
+    ${bySlot('follower_count', slot => `country_code_${slot}_follower_count`).join(',\n    ')},
+    SUM(IF(rank_in_breakdown <= 5, follower_count, NULL)) AS country_code_total_follower_count,
+    ${bySlot('follower_percentage', slot => `country_code_${slot}_follower_percentage`).join(',\n    ')},
+    SUM(IF(rank_in_breakdown <= 5, follower_percentage, NULL)) AS country_code_total_follower_percentage,
+    TO_JSON_STRING(
+      ARRAY_AGG(
+        STRUCT(
+          rank_in_breakdown AS rank,
+          country_code,
+          country_name,
+          follower_count,
+          ROUND(follower_percentage, 2) AS follower_percentage
+        )
+        ORDER BY rank_in_breakdown
+      )
+    ) AS country_follower_distribution_json
+  FROM demographics
+  WHERE breakdown = 'country'
+  GROUP BY threads_user_id, date
+),
+
+city_demographics AS (
+  SELECT
+    threads_user_id,
+    date,
+    ${bySlot('city', slot => `city_${slot}`).join(',\n    ')},
+    ${bySlot('follower_count', slot => `city_${slot}_follower_count`).join(',\n    ')},
+    SUM(IF(rank_in_breakdown <= 5, follower_count, NULL)) AS city_total_follower_count,
+    ${bySlot('follower_percentage', slot => `city_${slot}_follower_percentage`).join(',\n    ')},
+    SUM(IF(rank_in_breakdown <= 5, follower_percentage, NULL)) AS city_total_follower_percentage,
+    TO_JSON_STRING(
+      ARRAY_AGG(
+        STRUCT(
+          rank_in_breakdown AS rank,
+          city,
+          follower_count,
+          ROUND(follower_percentage, 2) AS follower_percentage
+        )
+        ORDER BY rank_in_breakdown
+      )
+    ) AS city_follower_distribution_json
+  FROM demographics
+  WHERE breakdown = 'city'
+  GROUP BY threads_user_id, date
+),
+
+-- Spine of every account/date present in any breakdown, so a date missing one breakdown yields
+-- NULLs for that group rather than dropping the row entirely.
+account_dates AS (
+  SELECT DISTINCT
+    threads_user_id,
+    date
+  FROM demographics
+)
+
+SELECT
+  TO_HEX(MD5(CONCAT(spine.date, '-', spine.threads_user_id))) AS simplified_demographic_date_id,
+  spine.date,
+  spine.threads_user_id,
+  age.* EXCEPT (threads_user_id, date),
+  gender.* EXCEPT (threads_user_id, date),
+  country.* EXCEPT (threads_user_id, date),
+  city.* EXCEPT (threads_user_id, date)
+FROM account_dates AS spine
+LEFT JOIN age_demographics AS age
+  ON spine.threads_user_id = age.threads_user_id
+  AND spine.date = age.date
+LEFT JOIN gender_demographics AS gender
+  ON spine.threads_user_id = gender.threads_user_id
+  AND spine.date = gender.date
+LEFT JOIN country_demographics AS country
+  ON spine.threads_user_id = country.threads_user_id
+  AND spine.date = country.date
+LEFT JOIN city_demographics AS city
+  ON spine.threads_user_id = city.threads_user_id
+  AND spine.date = city.date

@@ -1,0 +1,36 @@
+
+-- Pivots the threads_account_lifetime raw table into one row per (threads_user_id, date).
+-- Values are cumulative point-in-time totals; the daily change is derived in tgt_threads_account_combined.
+-- There are similar values between account_insights and threads_account_lifetime, 
+-- we can use these to compare
+config {
+  type: "table",
+  tags: ["staging"],
+  assertions: {
+    uniqueKey: ["threads_user_id", "date"],
+    nonNull: ["threads_user_id", "date"],
+    rowConditions: []
+  },
+  columns: {
+    threads_user_id: "The Threads user ID",
+    date: "YYYY-MM-DD date of this snapshot",
+    followers_count: "Total number of followers as at this snapshot, cumulative lifetime value"
+  }
+}
+
+js {
+  const { maxIfConditionValueNotNull } = require('includes/utils');
+  const { stagingAlwaysNullChecks } = require('includes/constants');
+  const accountLifetimeColumns = stagingAlwaysNullChecks.find(
+    check => check.table === 'stg_threads_account_lifetime'
+  ).columns;
+}
+
+SELECT
+  threads_user_id,
+  target_date AS date,
+  ${accountLifetimeColumns.map(
+    column => maxIfConditionValueNotNull('metric', column, 'value')
+  ).join(',\n  ')}
+FROM ${ref("raw_threads_account_lifetime")}
+GROUP BY threads_user_id, target_date

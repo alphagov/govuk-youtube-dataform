@@ -1,0 +1,43 @@
+
+-- Renames target_date -> date and timestamp -> replied_at for the Threads replies snapshot.
+-- There are no insights metrics for replies, so this model carries metadata only.
+config {
+  type: "table",
+  tags: ["staging"],
+  assertions: {
+    uniqueKey: ["reply_id", "date"],
+    nonNull: ["reply_id", "date", "threads_user_id"],
+    rowConditions: []
+  },
+  columns: {
+    reply_id: "The Threads reply ID",
+    date: "YYYY-MM-DD date of this metadata snapshot",
+    threads_user_id: "The Threads user ID the reply was collected for",
+    media_type: "The underlying media type of the reply, e.g. TEXT_POST, IMAGE",
+    text: "The text body of the reply",
+    replied_at: "The timestamp the reply was published",
+    shortcode: "The short code identifying the reply in its permalink",
+    permalink: "The public URL of the reply",
+    has_replies: "Whether the reply itself has replies",
+    is_reply: "Whether this row is a reply (true for every row observed today)",
+    root_post_id: "The media ID of the post at the root of the reply thread",
+    replied_to_id: "The media or reply ID this reply directly responds to",
+    hide_status: "The moderation hide status of the reply (always NULL in the source today)"
+  }
+}
+
+SELECT
+  reply_id,
+  target_date AS date,
+  threads_user_id,
+  media_type,
+  text,
+  timestamp AS replied_at,
+  shortcode,
+  permalink,
+  has_replies,
+  is_reply,
+  root_post_id,
+  replied_to_id,
+  hide_status
+FROM ${ref("raw_threads_replies")}

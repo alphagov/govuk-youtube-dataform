@@ -1,0 +1,30 @@
+
+-- Renames target_date -> date and passes through the Threads profile metadata snapshot.
+config {
+  type: "table",
+  tags: ["staging"],
+  assertions: {
+    uniqueKey: ["threads_user_id", "date"],
+    nonNull: ["threads_user_id", "date"],
+    rowConditions: []
+  },
+  columns: {
+    threads_user_id: "The Threads user ID",
+    date: "YYYY-MM-DD date of this metadata snapshot",
+    username: "The account's Threads handle",
+    name: "The display name of the account",
+    biography: "The account's bio text",
+    profile_picture_url: "The URL of the account's profile picture",
+    is_verified: "Whether the account is verified on Threads"
+  }
+}
+
+SELECT
+  threads_user_id,
+  target_date AS date,
+  username,
+  name,
+  biography,
+  profile_picture_url,
+  is_verified
+FROM ${ref("raw_threads_profile")}

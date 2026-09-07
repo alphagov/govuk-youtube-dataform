@@ -1,0 +1,32 @@
+
+-- A table that contains the raw Threads media insights (EAV shape). Only period = 'lifetime' is observed today (clicks, likes, quotes, replies, reposts, shares, views), reported uniformly for every media snapshot.
+-- Values are cumulative, so downstream models derive a daily change from consecutive snapshots. They are not monotonic: likes, views and reposts all decrease across snapshots in the source data (unlikes, deletions), so a negative change is legitimate and must not be clamped.
+-- Only posts appear here; replies have no insights.
+config {
+  type: "view",
+  tags: ["raw"],
+  assertions: {
+    uniqueKey: ["media_id", "target_date", "metric", "period"],
+    nonNull: ["media_id", "target_date", "metric", "period"],
+    rowConditions: []
+  },
+  columns: {
+    media_id: "The Threads media (post) ID",
+    metric: "The name of the insight metric, e.g. clicks, likes, quotes, replies, reposts, shares, views",
+    period: "The aggregation period the metric value applies to (lifetime observed today)",
+    value: "The cumulative value of the metric as at the snapshot date",
+    target_date: "YYYY-MM-DD date of this insights snapshot",
+    ingestion_timestamp: "The timestamp this row was ingested into BigQuery"
+  }
+}
+
+SELECT
+  CAST(media_id AS STRING) AS media_id,
+  CAST(metric AS STRING) AS metric,
+  CAST(period AS STRING) AS period,
+  CAST(value AS INT64) AS value,
+  CAST(target_date AS DATE) AS target_date,
+  CAST(ingestion_timestamp AS TIMESTAMP) AS ingestion_timestamp
+FROM
+  `gds-social-data.govuk_threads.threads_media_insights`
+WHERE media_id IS NOT NULL

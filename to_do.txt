@@ -20,3 +20,13 @@ Before production
 
 
 
+
+Threads
+- the 2026-08-25 pull returned value = 0 for 11 posts in threads_media_insights that hold real
+  values on both 2026-08-20 and 2026-08-26 (e.g. media_id 17969021796098372: 33300 -> 0 -> 33300).
+  This is a bad pull upstream, not a modelling issue, but it drives tgt_threads_media_combined
+  views_daily_change to about -119k on that date. Surfaced by ver_threads_engagement_reconciliation.
+  Decide whether to fix at source, backfill, or add an assertion for implausible lifetime drops.
+- threads pipeline has only been validated against 2026-08-19 onwards; revisit the always-null
+  column lists once more data has landed, in particular gif_url, hide_status and clicks, which are
+  empty or zero today and are currently excluded from or unasserted by the null checks.

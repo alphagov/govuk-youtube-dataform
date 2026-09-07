@@ -1,0 +1,34 @@
+
+-- A table that contains the raw Threads profile metadata snapshot (one row per account per pull; pulls are irregular, not strictly daily).
+config {
+  type: "view",
+  tags: ["raw"],
+  assertions: {
+    uniqueKey: ["threads_user_id", "target_date"],
+    nonNull: ["threads_user_id", "target_date"],
+    rowConditions: []
+  },
+  columns: {
+    threads_user_id: "The Threads user ID",
+    username: "The account's Threads handle",
+    name: "The display name of the account",
+    biography: "The account's bio text",
+    profile_picture_url: "The URL of the account's profile picture",
+    is_verified: "Whether the account is verified on Threads",
+    target_date: "YYYY-MM-DD date of this metadata snapshot",
+    ingestion_timestamp: "The timestamp this row was ingested into BigQuery"
+  }
+}
+
+SELECT
+  CAST(threads_user_id AS STRING) AS threads_user_id,
+  CAST(username AS STRING) AS username,
+  CAST(name AS STRING) AS name,
+  CAST(biography AS STRING) AS biography,
+  CAST(profile_picture_url AS STRING) AS profile_picture_url,
+  CAST(is_verified AS BOOL) AS is_verified,
+  CAST(target_date AS DATE) AS target_date,
+  CAST(ingestion_timestamp AS TIMESTAMP) AS ingestion_timestamp
+FROM
+  `gds-social-data.govuk_threads.threads_profile`
+WHERE threads_user_id IS NOT NULL

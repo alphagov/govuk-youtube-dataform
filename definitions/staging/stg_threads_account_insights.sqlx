@@ -1,0 +1,42 @@
+
+-- Pivots the threads_account_insights raw table into one row per (threads_user_id, date).
+-- Only period = 'day' is observed today, but no period filter is applied here (mirroring
+-- stg_instagram_account_insights and stg_facebook_page_insights) so that a future mixed-period
+-- metric is not silently dropped.
+-- These are daily values reported by the API, not deltas computed from cumulative totals, and
+-- date is the day the metric describes rather than the day the data was pulled.
+config {
+  type: "table",
+  tags: ["staging"],
+  assertions: {
+    uniqueKey: ["threads_user_id", "date"],
+    nonNull: ["threads_user_id", "date"],
+    rowConditions: []
+  },
+  columns: {
+    threads_user_id: "The Threads user ID",
+    date: "YYYY-MM-DD date the metric values apply to",
+    likes: "Number of likes across the account's posts that day, daily value",
+    quotes: "Number of times the account's posts were quoted that day, daily value",
+    replies: "Number of replies to the account's posts that day, daily value",
+    reposts: "Number of times the account's posts were reposted that day, daily value",
+    views: "Number of views across the account's posts that day, daily value"
+  }
+}
+
+js {
+  const { maxIfConditionValueNotNull } = require('includes/utils');
+  const { stagingAlwaysNullChecks } = require('includes/constants');
+  const accountInsightsColumns = stagingAlwaysNullChecks.find(
+    check => check.table === 'stg_threads_account_insights'
+  ).columns;
+}
+
+SELECT
+  threads_user_id,
+  target_date AS date,
+  ${accountInsightsColumns.map(
+    column => maxIfConditionValueNotNull('metric', column, 'value')
+  ).join(',\n  ')}
+FROM ${ref("raw_threads_account_insights")}
+GROUP BY threads_user_id, target_date

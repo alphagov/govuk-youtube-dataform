@@ -1,0 +1,28 @@
+-- Maps the raw (media_type, media_product_type) pair to a single human-readable media_label, so staging/target models don't need to repeat the CASE logic.
+-- media_product_type is always THREADS today; it is kept in the key so a future Threads surface can be added without changing the join.
+config {
+  type: "table",
+  assertions: {
+    uniqueKey: ["media_type", "media_product_type"],
+    nonNull: ["media_type", "media_product_type", "media_label"]
+  },
+  columns: {
+    media_type: "The underlying media type as reported by the Threads API",
+    media_product_type: "The Threads surface the media was published to, as reported by the Threads API",
+    media_label: "Human-readable label for this media_type/media_product_type combination"
+  }
+}
+
+SELECT *
+FROM UNNEST(
+  ARRAY<STRUCT<
+    media_type          STRING,
+    media_product_type  STRING,
+    media_label         STRING
+  >>[
+    ('TEXT_POST',      'THREADS', 'Text post'),
+    ('IMAGE',          'THREADS', 'Image post'),
+    ('VIDEO',          'THREADS', 'Video post'),
+    ('CAROUSEL_ALBUM', 'THREADS', 'Carousel post')
+  ]
+)

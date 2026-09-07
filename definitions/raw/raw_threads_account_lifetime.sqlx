@@ -1,0 +1,28 @@
+
+-- A table that contains the raw Threads account lifetime totals (EAV shape). Only followers_count is observed today. Values are cumulative point-in-time totals, not daily figures, so downstream models derive a daily change from consecutive snapshots.
+config {
+  type: "view",
+  tags: ["raw"],
+  assertions: {
+    uniqueKey: ["threads_user_id", "target_date", "metric"],
+    nonNull: ["threads_user_id", "target_date", "metric"],
+    rowConditions: []
+  },
+  columns: {
+    threads_user_id: "The Threads user ID",
+    metric: "The name of the lifetime metric, e.g. followers_count",
+    value: "The cumulative value of the metric as at the snapshot date",
+    target_date: "YYYY-MM-DD date of this snapshot",
+    ingestion_timestamp: "The timestamp this row was ingested into BigQuery"
+  }
+}
+
+SELECT
+  CAST(threads_user_id AS STRING) AS threads_user_id,
+  CAST(metric AS STRING) AS metric,
+  CAST(value AS INT64) AS value,
+  CAST(target_date AS DATE) AS target_date,
+  CAST(ingestion_timestamp AS TIMESTAMP) AS ingestion_timestamp
+FROM
+  `gds-social-data.govuk_threads.threads_account_lifetime`
+WHERE threads_user_id IS NOT NULL

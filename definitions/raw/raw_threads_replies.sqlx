@@ -1,0 +1,48 @@
+
+-- A table that contains the raw Threads replies metadata snapshot. Every pull re-snapshots the reply catalogue, so the same reply_id recurs across many target_dates.
+-- There are no insights metrics for replies, so downstream models carry metadata and parent-post context only.
+-- hide_status is 100% NULL in the source today and is therefore excluded from the always-null assertion lists.
+config {
+  type: "view",
+  tags: ["raw"],
+  assertions: {
+    uniqueKey: ["reply_id", "target_date"],
+    nonNull: ["reply_id", "target_date", "threads_user_id"],
+    rowConditions: []
+  },
+  columns: {
+    threads_user_id: "The Threads user ID the reply was collected for",
+    reply_id: "The Threads reply ID",
+    media_type: "The underlying media type of the reply, e.g. TEXT_POST, IMAGE",
+    text: "The text body of the reply",
+    timestamp: "The timestamp the reply was published",
+    shortcode: "The short code identifying the reply in its permalink",
+    permalink: "The public URL of the reply",
+    has_replies: "Whether the reply itself has replies",
+    is_reply: "Whether this row is a reply (true for every row observed today)",
+    root_post_id: "The media ID of the post at the root of the reply thread",
+    replied_to_id: "The media or reply ID this reply directly responds to",
+    hide_status: "The moderation hide status of the reply (always NULL in the source today)",
+    target_date: "YYYY-MM-DD date of this metadata snapshot",
+    ingestion_timestamp: "The timestamp this row was ingested into BigQuery"
+  }
+}
+
+SELECT
+  CAST(threads_user_id AS STRING) AS threads_user_id,
+  CAST(reply_id AS STRING) AS reply_id,
+  CAST(media_type AS STRING) AS media_type,
+  CAST(text AS STRING) AS text,
+  CAST(timestamp AS TIMESTAMP) AS timestamp,
+  CAST(shortcode AS STRING) AS shortcode,
+  CAST(permalink AS STRING) AS permalink,
+  CAST(has_replies AS BOOL) AS has_replies,
+  CAST(is_reply AS BOOL) AS is_reply,
+  CAST(root_post_id AS STRING) AS root_post_id,
+  CAST(replied_to_id AS STRING) AS replied_to_id,
+  CAST(hide_status AS STRING) AS hide_status,
+  CAST(target_date AS DATE) AS target_date,
+  CAST(ingestion_timestamp AS TIMESTAMP) AS ingestion_timestamp
+FROM
+  `gds-social-data.govuk_threads.threads_replies`
+WHERE reply_id IS NOT NULL
