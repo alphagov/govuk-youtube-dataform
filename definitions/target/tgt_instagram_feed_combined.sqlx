@@ -69,3 +69,4 @@ SELECT
 FROM GRAIN_SPINE spine
 LEFT JOIN media_feed m USING (media_id, date)
 LEFT JOIN ${ref("stg_instagram_media_insights")} i USING (media_id, date)
+ORDER BY media_id, date
