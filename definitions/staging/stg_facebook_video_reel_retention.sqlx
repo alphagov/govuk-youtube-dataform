@@ -96,5 +96,8 @@ SELECT
   average_retention_pct,
   ${retentionSecondColumns.map(
     column => retention.at(Number(column.match(/\d+/)[0]), column)
-  ).join(',\n  ')}
+  ).join(',\n  ')},
+  length,
+  bin_size_seconds
 FROM BIN_SIZED
+ORDER BY length, date, video_id
