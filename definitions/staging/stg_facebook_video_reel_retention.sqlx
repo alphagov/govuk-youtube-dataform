@@ -41,8 +41,11 @@ config {
 }
 
 js {
-  const { interpolateRetentionUdf, interpolatedRetentionAt } = require('includes/utils');
+  const { retentionInterpolation } = require('includes/utils');
   const { stagingAlwaysNullChecks } = require('includes/constants');
+  // Bound once to this model's dataset, so the UDF definition below and every call
+  // site in the SELECT are guaranteed to resolve to the same function.
+  const retention = retentionInterpolation(self());
   // These three are selected explicitly below rather than generated per second
   // offset, so they're excluded from the list driving the interpolated columns.
   const nonPivotColumns = ['average_retention_pct', 'bin_count', 'bin_size_seconds'];
@@ -51,8 +54,11 @@ js {
   ).columns.filter(column => !nonPivotColumns.includes(column));
 }
 
+-- Persistent, not CREATE TEMP FUNCTION: Dataform runs pre_operations as a separate
+-- BigQuery job from the table build, so a temp function is gone before the query that
+-- needs it runs. Created in this model's own dataset, so it follows the branch suffix.
 pre_operations {
-  ${interpolateRetentionUdf}
+  ${retention.createUdf()}
 }
 
 WITH RETENTION_BINS AS (
@@ -89,6 +95,6 @@ SELECT
   bin_size_seconds,
   average_retention_pct,
   ${retentionSecondColumns.map(
-    column => interpolatedRetentionAt(Number(column.match(/\d+/)[0]), column)
+    column => retention.at(Number(column.match(/\d+/)[0]), column)
   ).join(',\n  ')}
 FROM BIN_SIZED

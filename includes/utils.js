@@ -32,24 +32,27 @@ const daysSincePreviousSnapshot = (partitionColumns, dateColumn = 'date') =>
 const ifConditionValue = (conditionColumn, conditionValue, valueColumn, aliasName) =>
   `IF(${conditionColumn} = '${conditionValue}', ${valueColumn}, NULL) AS ${aliasName}`;
 
-// Creates a JS UDF (user defined function) for reading a retention curve when
-// the source reports retention in variable-width bins rather than per second (see
-// stg_facebook_video_reel_retention). Converts the target second into a fractional
-// bin position and linearly interpolates between the two bins either side of it.
-// Drop into a model with `pre_operations { ${interpolateRetentionUdf} }` — Dataform
-// emits pre_operations and the table DDL as a single BigQuery script, so the temp
-// function is still in scope for the main query.
-// bin_no is declared FLOAT64, not INT64, deliberately: BigQuery passes an INT64 held
-// *inside a STRUCT or ARRAY* to JavaScript as a string, so with INT64 the `===`
-// comparisons below never match and the function returns NULL for every row.
-const interpolateRetentionUdf = `
-CREATE TEMP FUNCTION InterpolateRetention(
-  target_sec INT64,
-  bin_size FLOAT64,
-  retention_data ARRAY<STRUCT<bin_no FLOAT64, retention_pct FLOAT64>>
-)
-RETURNS FLOAT64
-LANGUAGE js AS r"""
+// Reads a retention curve at an arbitrary interval offset, for sources that report
+// retention in variable-width bins rather than per second (see
+// stg_facebook_video_reel_retention). Call once with self() to bind everything to the
+// dataset the model is being built into:
+
+const retentionInterpolation = (selfTarget) => {
+  // The UDF lives beside the model, so its address is the model's own address with the
+  // table name swapped for the function name. self() returns `project.dataset.table`;
+  // the regex strips both backticks so the path can be split, and the first two parts
+  // are re-wrapped (the project id contains hyphens, so it must stay quoted).
+  const [database, schema] = selfTarget.replace(/`/g, '').split('.');
+  const udfName = `\`${database}.${schema}.InterpolateRetention\``;
+
+  // The interpolation algorithm itself, held in its own const so createUdf below stays
+  // short enough to read as an interface. Converts a target second into a fractional bin
+  // position and linearly interpolates between the two bins either side of it.
+  // bin_no arrives as FLOAT64, not INT64, deliberately: BigQuery passes an INT64 held
+  // *inside a STRUCT or ARRAY* to JavaScript as a string, so with INT64 the `===`
+  // comparisons below never match and the function returns NULL for every row.
+  // JS is used instead of python due to the much higher computational overheads for python
+  const INTERPOLATE_RETENTION_JS = `
   // No video length (so no bin size), or no curve to read: nothing to interpolate
   if (!bin_size || !retention_data || retention_data.length === 0) return null;
 
@@ -71,22 +74,42 @@ LANGUAGE js AS r"""
   if (upper_val === null) upper_val = lower_val;
 
   return lower_val + ((exact_bin - lower_bin) * (upper_val - lower_val));
-"""`;
+`;
 
-// Emits one interpolated retention column, reading InterpolateRetention() at a fixed
-// second offset. Expects `length`, `bin_size_seconds` and `retention_data` in scope.
-// NULL where the offset is past the end of the video, and where length is unknown
-// (bin_size_seconds NULL, caught by the UDF's own guard).
-const interpolatedRetentionAt = (targetSecond, aliasName) =>
-  `CASE WHEN length < ${targetSecond} THEN NULL
-        ELSE InterpolateRetention(${targetSecond}, bin_size_seconds, retention_data)
-   END AS ${aliasName}`;
+  return {
+    // DDL for a pre_operations block.
+    // This must be a PERSISTENT function, not CREATE TEMP FUNCTION. Dataform runs
+    // pre_operations as a separate BigQuery job from the table build, and materialises
+    // the table by submitting a plain SELECT with a destination table set on the job
+    // config — which BigQuery only allows for a single statement, so the definition
+    // cannot be prefixed to that query either. A temp function is scoped to the job that
+    // created it and is therefore already gone by the time the query needs it
+    // ("Function not found: InterpolateRetention"); a persistent function outlives the
+    // job. CREATE OR REPLACE keeps re-running the model idempotent.
+    createUdf: () => `
+CREATE OR REPLACE FUNCTION ${udfName}(
+  target_sec INT64,
+  bin_size FLOAT64,
+  retention_data ARRAY<STRUCT<bin_no FLOAT64, retention_pct FLOAT64>>
+)
+RETURNS FLOAT64
+LANGUAGE js AS r"""${INTERPOLATE_RETENTION_JS}"""`,
+
+    // One interpolated retention column at a fixed second offset. Expects `length`,
+    // `bin_size_seconds` and `retention_data` in scope. NULL where the offset is past
+    // the end of the video, and where length is unknown (bin_size_seconds NULL, caught
+    // by the UDF's own guard).
+    at: (targetSecond, aliasName) =>
+      `CASE WHEN length < ${targetSecond} THEN NULL
+        ELSE ${udfName}(${targetSecond}, bin_size_seconds, retention_data)
+   END AS ${aliasName}`
+  };
+};
 
 module.exports = {
   maxIfConditionValueNotNull,
   lifetimeDailyChange,
   daysSincePreviousSnapshot,
   ifConditionValue,
-  interpolateRetentionUdf,
-  interpolatedRetentionAt
+  retentionInterpolation
 };
