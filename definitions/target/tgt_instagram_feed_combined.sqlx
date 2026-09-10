@@ -5,10 +5,16 @@
 -- Every insights metric is a cumulative lifetime total, so each carries a matching _daily_change
 -- column computed from the post's previous snapshot.
 --
--- The changes are derived from the insights edge only, which is the more reliable of the two
--- routes. like_count and comments_count come from the media object endpoint on its own snapshot
--- cadence and are deliberately left undifferenced: differencing both would need a second gap
--- column, and one days_since_previous_snapshot describing two series would be misleading.
+-- Both routes to the same numbers are differenced: like_count / comments_count from the media
+-- object endpoint, and the insights edge metrics. Comparing like_count_daily_change against
+-- likes_lifetime_daily_change is the change-level version of the alignment check this model exists
+-- to do.
+--
+-- The two endpoints are pulled on the same cadence, so a single days_since_previous_snapshot
+-- describes both series (checked 2026-09-10: identical 59 snapshot dates, and 1 of 21,777
+-- media/date pairs present on the media edge only). It is taken from the insights series. Should
+-- the two ever drift apart, the media-derived changes need their own gap column, since a window
+-- that describes one series but not the other is worse than no window at all.
 config {
   type: "table",
   tags: ["target","instagram"],
@@ -37,6 +43,8 @@ config {
     shares: "Lifetime number of times the media was shared, lifetime value",
     total_interactions: "Lifetime sum of likes, comments, saves and shares on the media, lifetime value",
     views: "Lifetime number of views of the media, lifetime value",
+    like_count_daily_change: "Change in like_count since this post's previous snapshot; NULL on its first snapshot, and legitimately negative when likes are withdrawn. The media object endpoint's answer to likes_lifetime_daily_change",
+    comments_count_daily_change: "Change in comments_count since this post's previous snapshot; NULL on its first snapshot, and legitimately negative when comments are deleted. The media object endpoint's answer to comments_lifetime_daily_change",
     comments_lifetime_daily_change: "Change in comments_lifetime since this post's previous snapshot; NULL on its first snapshot, and legitimately negative when comments are deleted",
     likes_lifetime_daily_change: "Change in likes_lifetime since this post's previous snapshot; NULL on its first snapshot, and legitimately negative when likes are withdrawn",
     reach_daily_change: "Change in reach since this post's previous snapshot; NULL on its first snapshot",
@@ -76,6 +84,16 @@ media_feed AS (
   FROM ${ref("stg_instagram_media")}
   WHERE media_product_type = 'FEED'
 ),
+media_change AS (
+  SELECT
+    media_id,
+    date,
+    like_count,
+    comments_count,
+    ${lifetimeDailyChange('like_count', ['media_id'])},
+    ${lifetimeDailyChange('comments_count', ['media_id'])}
+  FROM media_feed
+),
 GRAIN_SPINE AS (
   SELECT media_id, date FROM media_feed
   UNION DISTINCT
@@ -94,14 +112,17 @@ SELECT
   m.media_label,
   m.permalink,
   m.published_at,
-  m.like_count,
-  m.comments_count,
+  mc.like_count,
+  mc.comments_count,
   ${insightsColumns.map(column => `i.${column} AS ${outputAlias(column)}`).join(',\n  ')},
+  mc.like_count_daily_change,
+  mc.comments_count_daily_change,
   ${insightsColumns.map(
     column => `i.${column}_daily_change AS ${outputAlias(column)}_daily_change`
   ).join(',\n  ')},
   i.days_since_previous_snapshot
 FROM GRAIN_SPINE spine
 LEFT JOIN media_feed m USING (media_id, date)
+LEFT JOIN media_change mc USING (media_id, date)
 LEFT JOIN insights_change i USING (media_id, date)
 ORDER BY media_id, date

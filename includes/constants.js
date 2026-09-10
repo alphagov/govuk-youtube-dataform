@@ -175,7 +175,8 @@ const targetAlwaysNullChecks = [
     columns: ["caption", "media_type", "media_product_type", "media_label",
       "permalink", "published_at", "like_count", "comments_count",
       "comments_lifetime", "likes_lifetime", "reach", "saved", "shares",
-      "total_interactions", "views", "comments_lifetime_daily_change",
+      "total_interactions", "views", "like_count_daily_change",
+      "comments_count_daily_change", "comments_lifetime_daily_change",
       "likes_lifetime_daily_change", "reach_daily_change", "saved_daily_change",
       "shares_daily_change", "total_interactions_daily_change",
       "views_daily_change", "days_since_previous_snapshot"]
