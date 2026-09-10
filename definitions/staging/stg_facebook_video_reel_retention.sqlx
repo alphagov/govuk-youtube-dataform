@@ -97,7 +97,6 @@ SELECT
   ${retentionSecondColumns.map(
     column => retention.at(Number(column.match(/\d+/)[0]), column)
   ).join(',\n  ')},
-  length,
-  bin_size_seconds
+  length
 FROM BIN_SIZED
 ORDER BY length, date, video_id
