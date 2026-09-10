@@ -23,9 +23,10 @@ config {
     biography: "The account's bio text",
     followers_count: "Total number of followers as of this snapshot, cumulative lifetime value",
     follows_count: "Total number of accounts this account follows, point-in-time value",
-    media_count: "Total number of media items published by the account, point-in-time value",
+    media_count: "Total number of media items published by the account, cumulative lifetime value",
     followers_count_daily_change: "Change in followers_count since the account's previous snapshot; NULL on the first snapshot, and spans days_since_previous_snapshot days rather than exactly one",
-    days_since_previous_snapshot: "Days between this snapshot and the previous one for the followers_count series; the window followers_count_daily_change actually covers. NULL on the first snapshot and on rows sourced only from account insights",
+    media_count_daily_change: "Net media items published since the account's previous snapshot; NULL on the first snapshot, and legitimately negative when posts are deleted",
+    days_since_previous_snapshot: "Days between this snapshot and the previous one for the account series; the window each _daily_change value actually covers. NULL on the first snapshot and on rows sourced only from account insights",
     follower_count_daily: "Net change in follower count that day, daily value reported directly by the insights endpoint (distinct from both followers_count and followers_count_daily_change)",
     reach: "Number of unique accounts reached that day, daily value",
     views: "Number of views of the account that day, daily value"
@@ -41,7 +42,9 @@ WITH lifetime_change AS (
     ig_user_id,
     date,
     followers_count,
+    media_count,
     ${lifetimeDailyChange('followers_count', ['ig_user_id'])},
+    ${lifetimeDailyChange('media_count', ['ig_user_id'])},
     ${daysSincePreviousSnapshot(['ig_user_id'])}
   FROM ${ref("stg_instagram_account")}
 ),
@@ -59,8 +62,9 @@ SELECT
   a.biography,
   l.followers_count,
   a.follows_count,
-  a.media_count,
+  l.media_count,
   l.followers_count_daily_change,
+  l.media_count_daily_change,
   l.days_since_previous_snapshot,
   i.follower_count AS follower_count_daily,
   i.reach,
