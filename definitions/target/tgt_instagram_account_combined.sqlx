@@ -1,5 +1,12 @@
 -- Core Instagram account fact model, combining account metadata and account
 -- insights into a single (ig_user_id, date) grain table.
+--
+-- Date for stg_instagram_account it is the date the snapshot was pulled; for stg_instagram_account_insights
+-- it is the day the metric actually describes. 
+--
+-- follower_count_daily          - net daily change reported directly by the insights endpoint
+-- followers_count_daily_change  - change since the previous snapshot, computed here from the cumulative followers_count
+
 config {
   type: "table",
   tags: ["target","instagram"],
@@ -9,21 +16,36 @@ config {
   },
   columns: {
     account_date_id: "Surrogate key: MD5 hash of date-ig_user_id",
-    date: "YYYY-MM-DD date of data",
+    date: "YYYY-MM-DD date of data; the snapshot pull date for the account fields, the day described for the insights fields",
     ig_user_id: "The Instagram Business Account ID",
     username: "The account's Instagram handle",
     name: "The display name of the account",
     biography: "The account's bio text",
-    followers_count: "Total number of followers as of this snapshot, point-in-time value",
+    followers_count: "Total number of followers as of this snapshot, cumulative lifetime value",
     follows_count: "Total number of accounts this account follows, point-in-time value",
     media_count: "Total number of media items published by the account, point-in-time value",
-    follower_count_daily_change: "Net change in follower count that day, daily value (distinct from followers_count)",
+    followers_count_daily_change: "Change in followers_count since the account's previous snapshot; NULL on the first snapshot, and spans days_since_previous_snapshot days rather than exactly one",
+    days_since_previous_snapshot: "Days between this snapshot and the previous one for the followers_count series; the window followers_count_daily_change actually covers. NULL on the first snapshot and on rows sourced only from account insights",
+    follower_count_daily: "Net change in follower count that day, daily value reported directly by the insights endpoint (distinct from both followers_count and followers_count_daily_change)",
     reach: "Number of unique accounts reached that day, daily value",
     views: "Number of views of the account that day, daily value"
   }
 }
 
-WITH GRAIN_SPINE AS (
+js {
+  const { lifetimeDailyChange, daysSincePreviousSnapshot } = require('includes/utils');
+}
+
+WITH lifetime_change AS (
+  SELECT
+    ig_user_id,
+    date,
+    followers_count,
+    ${lifetimeDailyChange('followers_count', ['ig_user_id'])},
+    ${daysSincePreviousSnapshot(['ig_user_id'])}
+  FROM ${ref("stg_instagram_account")}
+),
+GRAIN_SPINE AS (
   SELECT ig_user_id, date FROM ${ref("stg_instagram_account")}
   UNION DISTINCT
   SELECT ig_user_id, date FROM ${ref("stg_instagram_account_insights")}
@@ -35,13 +57,16 @@ SELECT
   a.username,
   a.name,
   a.biography,
-  a.followers_count,
+  l.followers_count,
   a.follows_count,
   a.media_count,
-  i.follower_count AS follower_count_daily_change,
+  l.followers_count_daily_change,
+  l.days_since_previous_snapshot,
+  i.follower_count AS follower_count_daily,
   i.reach,
   i.views
 FROM GRAIN_SPINE spine
 LEFT JOIN ${ref("stg_instagram_account")} a USING (ig_user_id, date)
+LEFT JOIN lifetime_change l USING (ig_user_id, date)
 LEFT JOIN ${ref("stg_instagram_account_insights")} i USING (ig_user_id, date)
 ORDER BY spine.date

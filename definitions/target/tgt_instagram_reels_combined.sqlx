@@ -1,9 +1,17 @@
 -- Core Instagram Reels table with primary key date, media_ia, where stg_instagram_meida
--- media_product_type = 'REELS', which only contains media_type reels. This is because Reels 
--- will have additional endpoints specific to reel_insights edge. 
+-- media_product_type = 'REELS', which only contains media_type reels. This is because Reels
+-- will have additional endpoints specific to reel_insights edge.
 -- We have duplicate metrics like_count, likes_lifetime, comments_count, comments_lifetime
 -- the purpos is to check they align, and if not explore why. Once we are certain they align
--- we can remove the media_posts component, as the insights edge will be our approach going forward 
+-- we can remove the media_posts component, as the insights edge will be our approach going forward
+--
+-- Every insights metric is a cumulative lifetime total, so each carries a matching _daily_change
+-- column computed from the reel's previous snapshot.
+--
+-- The changes are derived from the insights edge only, which is the more reliable of the two
+-- routes. like_count and comments_count come from the media object endpoint on its own snapshot
+-- cadence and are deliberately left undifferenced: differencing both would need a second gap
+-- column, and one days_since_previous_snapshot describing two series would be misleading.
 config {
   type: "table",
   tags: ["target","instagram"],
@@ -25,17 +33,48 @@ config {
     published_at: "The timestamp the media was published",
     like_count: "Number of likes on the media as reported by the media object endpoint at snapshot time",
     comments_count: "Number of comments on the media as reported by the media object endpoint at snapshot time",
-    likes_lifetime: "Lifetime count of likes on the media as reported by the insights endpoint, lifetime value",
     comments_lifetime: "Lifetime count of comments on the media as reported by the insights endpoint, lifetime value",
+    likes_lifetime: "Lifetime count of likes on the media as reported by the insights endpoint, lifetime value",
     reach: "Lifetime number of unique accounts that saw the media, lifetime value",
     saved: "Lifetime number of times the media was saved, lifetime value",
     shares: "Lifetime number of times the media was shared, lifetime value",
     total_interactions: "Lifetime sum of likes, comments, saves and shares on the media, lifetime value",
-    views: "Lifetime number of views of the media, lifetime value"
+    views: "Lifetime number of views of the media, lifetime value",
+    comments_lifetime_daily_change: "Change in comments_lifetime since this reel's previous snapshot; NULL on its first snapshot, and legitimately negative when comments are deleted",
+    likes_lifetime_daily_change: "Change in likes_lifetime since this reel's previous snapshot; NULL on its first snapshot, and legitimately negative when likes are withdrawn",
+    reach_daily_change: "Change in reach since this reel's previous snapshot; NULL on its first snapshot",
+    saved_daily_change: "Change in saved since this reel's previous snapshot; NULL on its first snapshot, and legitimately negative when saves are undone",
+    shares_daily_change: "Change in shares since this reel's previous snapshot; NULL on its first snapshot",
+    total_interactions_daily_change: "Change in total_interactions since this reel's previous snapshot; NULL on its first snapshot, and legitimately negative when the underlying likes, comments or saves are withdrawn",
+    views_daily_change: "Change in views since this reel's previous snapshot; NULL on its first snapshot",
+    days_since_previous_snapshot: "Days between this snapshot and this reel's previous one; the window each _daily_change value actually covers. NULL on the first snapshot"
   }
 }
 
-WITH media_reels AS (
+js {
+  const { lifetimeDailyChange, daysSincePreviousSnapshot } = require('includes/utils');
+  const { stagingAlwaysNullChecks } = require('includes/constants');
+  const insightsColumns = stagingAlwaysNullChecks.find(
+    check => check.table === 'stg_instagram_media_insights'
+  ).columns;
+  // Two insights metrics are renamed on the way out so they don't collide with the media object's
+  // like_count / comments_count, so the lifetime and the change columns share one alias map.
+  const outputAlias = column =>
+    ({likes: 'likes_lifetime', comments: 'comments_lifetime'})[column] || column;
+}
+
+WITH insights_change AS (
+  SELECT
+    media_id,
+    date,
+    ${insightsColumns.join(',\n    ')},
+    ${insightsColumns.map(
+      column => lifetimeDailyChange(column, ['media_id'])
+    ).join(',\n    ')},
+    ${daysSincePreviousSnapshot(['media_id'])}
+  FROM ${ref("stg_instagram_media_insights")}
+),
+media_reels AS (
   SELECT *
   FROM ${ref("stg_instagram_media")}
   WHERE media_product_type = 'REELS'
@@ -60,14 +99,12 @@ SELECT
   m.published_at,
   m.like_count,
   m.comments_count,
-  i.likes AS likes_lifetime,
-  i.comments AS comments_lifetime,
-  i.reach,
-  i.saved,
-  i.shares,
-  i.total_interactions,
-  i.views
+  ${insightsColumns.map(column => `i.${column} AS ${outputAlias(column)}`).join(',\n  ')},
+  ${insightsColumns.map(
+    column => `i.${column}_daily_change AS ${outputAlias(column)}_daily_change`
+  ).join(',\n  ')},
+  i.days_since_previous_snapshot
 FROM GRAIN_SPINE spine
 LEFT JOIN media_reels m USING (media_id, date)
-LEFT JOIN ${ref("stg_instagram_media_insights")} i USING (media_id, date)
-Order by media_id, date
+LEFT JOIN insights_change i USING (media_id, date)
+ORDER BY media_id, date
