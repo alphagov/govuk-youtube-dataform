@@ -1,22 +1,10 @@
 
--- Renames target_date -> date and reads each video's retention curve at fixed
--- second offsets.
---
--- timestamp_segment (the source's `second` column, renamed in the raw view) is NOT
--- a playback second: it is a 0-indexed bin number, and each bin covers a percentage
--- of the video rather than one second. Segments are contiguous from 0 and capped at
--- 40, so bin width varies with video length (observed 0.21s-3.09s across lengths of
--- 1.7s-123.5s). Reading `timestamp_segment = 5` therefore lands ~12.5% of the way
--- into a 41-segment video, not 5 seconds in, which is why this model interpolates
--- rather than pivoting on the segment directly with maxIfConditionValueNotNull().
---
--- Segment 0 is t=0 (it averages 0.9949 retention), so segments 0..N span N intervals
--- and bin width is length / MAX(timestamp_segment), not length / COUNT(*). Each
--- video/date's whole curve is collected into an array so InterpolateRetention() can
--- linearly interpolate between the two segments either side of the requested second.
---
--- Grain stays one row per (video_id, date): tgt_facebook_reels_combined joins on
--- that key and asserts uniqueness on it.
+-- Renames target_date -> date. retention_pct is itself a lifetime metric
+-- (one row per second-of-playback per video/date), so this pivots the
+-- second dimension away into named columns at fixed second offsets, using
+-- MAX(IF(...)) rather than AVG(CASE...ELSE 0...) — the latter would dilute
+-- the value by averaging it against every other second in the group instead
+-- of isolating the single matching row.
 config {
   type: "table",
   tags: ["staging"],
@@ -28,75 +16,32 @@ config {
   columns: {
     video_id: "The Facebook video ID",
     date: "YYYY-MM-DD date of this retention snapshot",
-    bin_count: "Number of retention timestamp segments the source returned for this video/date. Segments are 0-indexed so this is MAX(timestamp_segment) + 1; capped at 41 by the source",
-    bin_size_seconds: "Seconds of playback each segment interval covers, video length / MAX(timestamp_segment). NULL where no video metadata snapshot exists for this video/date",
-    average_retention_pct: "Average percentage (0.0-1.0) of the video watched, across all timestamp segments",
-    avg_retention_5s: "Percentage (0.0-1.0) of viewers still watching at 5 seconds, linearly interpolated between the two adjacent timestamp segments. NULL if the video is shorter than 5 seconds",
-    avg_retention_10s: "Percentage (0.0-1.0) of viewers still watching at 10 seconds, linearly interpolated between the two adjacent timestamp segments. NULL if the video is shorter than 10 seconds",
-    avg_retention_15s: "Percentage (0.0-1.0) of viewers still watching at 15 seconds, linearly interpolated between the two adjacent timestamp segments. NULL if the video is shorter than 15 seconds",
-    avg_retention_20s: "Percentage (0.0-1.0) of viewers still watching at 20 seconds, linearly interpolated between the two adjacent timestamp segments. NULL if the video is shorter than 20 seconds",
-    avg_retention_25s: "Percentage (0.0-1.0) of viewers still watching at 25 seconds, linearly interpolated between the two adjacent timestamp segments. NULL if the video is shorter than 25 seconds",
-    avg_retention_30s: "Percentage (0.0-1.0) of viewers still watching at 30 seconds, linearly interpolated between the two adjacent timestamp segments. NULL if the video is shorter than 30 seconds"
+    average_retention_pct: "Average percentage (0.0-1.0) of the video watched, across all seconds",
+    avg_retention_5s: "Percentage (0.0-1.0) of viewers still watching at 5 seconds",
+    avg_retention_10s: "Percentage (0.0-1.0) of viewers still watching at 10 seconds",
+    avg_retention_15s: "Percentage (0.0-1.0) of viewers still watching at 15 seconds",
+    avg_retention_20s: "Percentage (0.0-1.0) of viewers still watching at 20 seconds",
+    avg_retention_25s: "Percentage (0.0-1.0) of viewers still watching at 25 seconds",
+    avg_retention_30s: "Percentage (0.0-1.0) of viewers still watching at 30 seconds"
   }
 }
 
 js {
-  const { retentionInterpolation } = require('includes/utils');
+  const { maxIfConditionValueNotNull } = require('includes/utils');
   const { stagingAlwaysNullChecks } = require('includes/constants');
-  // Bound once to this model's dataset, so the UDF definition below and every call
-  // site in the SELECT are guaranteed to resolve to the same function.
-  const retention = retentionInterpolation(self());
-  // These three are selected explicitly below rather than generated per second
-  // offset, so they're excluded from the list driving the interpolated columns.
-  const nonPivotColumns = ['average_retention_pct', 'bin_count', 'bin_size_seconds'];
+  // average_retention_pct isn't a per-second pivot column, so it's excluded here
+  // and selected separately below.
   const retentionSecondColumns = stagingAlwaysNullChecks.find(
     check => check.table === 'stg_facebook_video_reel_retention'
-  ).columns.filter(column => !nonPivotColumns.includes(column));
+  ).columns.filter(column => column !== 'average_retention_pct');
 }
-
--- Persistent, not CREATE TEMP FUNCTION: Dataform runs pre_operations as a separate
--- BigQuery job from the table build, so a temp function is gone before the query that
--- needs it runs. Created in this model's own dataset, so it follows the branch suffix.
-pre_operations {
-  ${retention.createUdf()}
-}
-
-WITH RETENTION_BINS AS (
-  SELECT
-    video_id,
-    target_date AS date,
-    MAX(timestamp_segment) + 1 AS bin_count,
-    MAX(timestamp_segment) AS max_bin_no,
-    AVG(retention_pct) AS average_retention_pct,
-    ARRAY_AGG(STRUCT(CAST(timestamp_segment AS FLOAT64) AS bin_no, retention_pct) ORDER BY timestamp_segment) AS retention_data
-  FROM ${ref("raw_facebook_video_reel_retention")}
-  WHERE timestamp_segment IS NOT NULL
-  GROUP BY video_id, target_date
-),
-
--- Video length only lives on the videos snapshot, and it's what turns a bin index
--- into a second. Joined LEFT so a video/date with retention but no metadata
--- snapshot keeps its row and simply reports NULL retention columns.
-BIN_SIZED AS (
-  SELECT
-    bins.*,
-    videos.length,
-    SAFE_DIVIDE(videos.length, bins.max_bin_no) AS bin_size_seconds
-  FROM RETENTION_BINS bins
-  LEFT JOIN ${ref("raw_facebook_videos")} videos
-    ON bins.video_id = videos.video_id
-   AND bins.date = videos.target_date
-)
 
 SELECT
   video_id,
-  date,
-  bin_count,
-  bin_size_seconds,
-  average_retention_pct,
+  target_date AS date,
+  AVG(retention_pct) AS average_retention_pct,
   ${retentionSecondColumns.map(
-    column => retention.at(Number(column.match(/\d+/)[0]), column)
-  ).join(',\n  ')},
-  length
-FROM BIN_SIZED
-ORDER BY length, date, video_id
+    column => maxIfConditionValueNotNull('second', Number(column.match(/\d+/)[0]), 'retention_pct', column)
+  ).join(',\n  ')}
+FROM ${ref("raw_facebook_video_reel_retention")}
+GROUP BY video_id, target_date
