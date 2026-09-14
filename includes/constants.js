@@ -155,6 +155,44 @@ const targetAlwaysNullChecks = [
       "red_watch_time_minutes", "average_view_duration_seconds",
       "average_view_duration_percentage"]
   },
+
+  // Column order matches each model's SELECT: lifetime block, then _daily_change block, then
+  // days_since_previous_snapshot. The change columns are NULL only on an entity's
+  // first snapshot, so they are non-NULL somewhere in any window covering two or
+  // more pulls and are safe to check.
+  {
+    table: "tgt_instagram_account_combined",
+    dateColumn: "date",
+    windowInterval: "INTERVAL 21 DAY",
+    columns: ["username", "name", "biography", "followers_count", "follows_count",
+      "media_count", "followers_count_daily_change", "media_count_daily_change",
+      "days_since_previous_snapshot", "follower_count_daily", "reach", "views"]
+  },
+  {
+    table: "tgt_instagram_feed_combined",
+    dateColumn: "date",
+    windowInterval: "INTERVAL 21 DAY",
+    columns: ["caption", "media_type", "media_product_type", "media_label",
+      "permalink", "published_at", "like_count", "comments_count",
+      "comments_lifetime", "likes_lifetime", "reach", "saved", "shares",
+      "total_interactions", "views", "like_count_daily_change",
+      "comments_count_daily_change", "comments_lifetime_daily_change",
+      "likes_lifetime_daily_change", "reach_daily_change", "saved_daily_change",
+      "shares_daily_change", "total_interactions_daily_change",
+      "views_daily_change", "days_since_previous_snapshot"]
+  },
+  {
+    table: "tgt_instagram_reels_combined",
+    dateColumn: "date",
+    windowInterval: "INTERVAL 21 DAY",
+    columns: ["caption", "media_type", "media_product_type", "media_label",
+      "permalink", "published_at", "like_count", "comments_count",
+      "comments_lifetime", "likes_lifetime", "reach", "saved", "shares",
+      "total_interactions", "views", "comments_lifetime_daily_change",
+      "likes_lifetime_daily_change", "reach_daily_change", "saved_daily_change",
+      "shares_daily_change", "total_interactions_daily_change",
+      "views_daily_change", "days_since_previous_snapshot"]
+  },
   // Threads pulls are irregular, hence INTERVAL 21 DAY. The _daily_change and
   // days_since_previous_snapshot columns are NULL only on an entity's first
   // snapshot, so they are non-NULL somewhere in any window covering two or more
