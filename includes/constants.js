@@ -8,7 +8,7 @@ const apiDtCutOffDate = '2026-03-01';
 // dropped by the pivot.
 // city and country are deliberately left as one row per value rather than one column per value:
 // they only return the top ~45 per pull and that set churns, so a column per value would mean
-// the table's schema changing whenever a city enters or leaves the top 45.
+// the tables schema changing whenever a city enters or leaves the top 45.
 const threadsDemographicBreakdowns = [
   {breakdown: "age",     column: "age_group"},
   {breakdown: "gender",  column: "gender"},
@@ -43,7 +43,7 @@ const threadsDemographicPivot = {
 };
 
 // Columns checked for "100% NULL across all rows in the window" per target table,
-// i.e. every column from that model's config.columns except keys/discriminators
+// i.e. every column from that models config.columns except keys/discriminators
 // (surrogate ids, date/month, video_id/page_id/post_id/channel_id, associated_post_id,
 // data_source) which can't legitimately be null.
 const targetAlwaysNullChecks = [
@@ -156,7 +156,7 @@ const targetAlwaysNullChecks = [
       "average_view_duration_percentage"]
   },
   // Threads pulls are irregular, hence INTERVAL 21 DAY. The _daily_change and
-  // days_since_previous_snapshot columns are NULL only on an entity's first
+  // days_since_previous_snapshot columns are NULL only on an entitys first
   // snapshot, so they are non-NULL somewhere in any window covering two or more
   // pulls and are safe to check. gif_url and hide_status are deliberately absent:
   // they are 100% NULL in the source today and would fail on day one.
@@ -389,7 +389,11 @@ const stagingAlwaysNullChecks = [
     table: "stg_facebook_video_reel_retention",
     dateColumn: "date",
     windowInterval: "INTERVAL 14 DAY",
-    columns: ["average_retention_pct", "avg_retention_5s", "avg_retention_10s",
+    // The avg_retention_*s entries double as the source of truth for which second
+    // offsets stg_facebook_video_reel_retention interpolates; that model derives the
+    // offset from each column name and skips the three non-pivot columns here.
+    columns: ["average_retention_pct", "bin_count", "bin_size_seconds","length",
+      "avg_retention_5s", "avg_retention_10s",
       "avg_retention_15s", "avg_retention_20s", "avg_retention_25s",
       "avg_retention_30s"]
   },
@@ -432,8 +436,8 @@ const stagingAlwaysNullChecks = [
     columns: ["comments", "likes", "reach", "saved", "shares",
       "total_interactions", "views"]
   },
-  // Threads pulls are irregular like Instagram's, hence INTERVAL 21 DAY rather
-  // than Facebook's 14. Two source columns are deliberately absent from these
+  // Threads pulls are irregular like Instagrams, hence INTERVAL 21 DAY rather
+  // than Facebooks 14. Two source columns are deliberately absent from these
   // lists because they are 100% NULL for first run. 
   // Revisit once more data has landed.
   {
