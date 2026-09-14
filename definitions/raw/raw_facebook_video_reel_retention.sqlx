@@ -1,25 +1,17 @@
 
--- A table that contains the raw Facebook video reel audience retention curve
--- (one row per timestamp segment per video per day).
---
--- The source column is physically named `second`, but it is not a playback second:
--- it is a 0-indexed bin covering a percentage of the video's duration, with the bin
--- count varying per video and capped at 41. It is renamed to `timestamp_segment`
--- here, matching the Graph API documentation, so nothing downstream reads it as a
--- number of seconds (and so it stops colliding with the SECOND date-part keyword).
--- stg_facebook_video_reel_retention converts segments back into real seconds.
+-- A table that contains the raw Facebook video reel audience retention (second-by-second)
 config {
   type: "view",
   tags: ["raw"],
   assertions: {
-    uniqueKey: ["video_id", "target_date", "timestamp_segment"],
-    nonNull: ["video_id", "target_date", "timestamp_segment"],
+    uniqueKey: ["video_id", "target_date", "second"],
+    nonNull: ["video_id", "target_date", "second"],
     rowConditions: []
   },
   columns: {
     video_id: "The Facebook video ID",
-    timestamp_segment: "The 0-indexed retention bin this percentage applies to, renamed from the source's `second` column. Each segment covers a percentage of the video's duration, not one second, so segment width varies with video length (observed 0.21s-3.09s). Stored as a string by the source and cast to INT here",
-    retention_pct: "Percentage (0.0-1.0) of viewers still watching at this timestamp segment",
+    second: "The second of playback (0-indexed) this retention percentage applies to, as a string per source",
+    retention_pct: "Percentage (0.0-1.0) of viewers still watching at this second",
     target_date: "YYYY-MM-DD date of this retention snapshot",
     ingestion_timestamp: "The timestamp this row was ingested into BigQuery"
   }
@@ -27,7 +19,7 @@ config {
 
 SELECT
   CAST(video_id AS STRING) AS video_id,
-  CAST(second AS INT) AS timestamp_segment,
+  CAST(second AS INT) AS second,
   CAST(retention_pct AS FLOAT64) AS retention_pct,
   CAST(target_date AS DATE) AS target_date,
   CAST(ingestion_timestamp AS TIMESTAMP) AS ingestion_timestamp
