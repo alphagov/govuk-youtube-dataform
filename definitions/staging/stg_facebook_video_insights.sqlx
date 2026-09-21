@@ -18,7 +18,6 @@ config {
     blue_reels_play_count: "Number of plays of the video as a Facebook Reel",
     fb_reels_replay_count: "Number of replays of the video as a Facebook Reel",
     fb_reels_total_plays: "Total plays of the video as a Facebook Reel",
-    post_impressions_unique: "Number of unique people who saw the post containing this video",
     post_video_avg_time_watched: "Average time watched for the video (unit unconfirmed)",
     post_video_followers: "Number of page followers who watched the video",
     post_video_view_time: "Total time spent watching the video (unit unconfirmed)"

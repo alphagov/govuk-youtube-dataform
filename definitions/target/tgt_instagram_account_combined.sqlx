@@ -73,4 +73,3 @@ FROM GRAIN_SPINE spine
 LEFT JOIN ${ref("stg_instagram_account")} a USING (ig_user_id, date)
 LEFT JOIN lifetime_change l USING (ig_user_id, date)
 LEFT JOIN ${ref("stg_instagram_account_insights")} i USING (ig_user_id, date)
-ORDER BY spine.date
