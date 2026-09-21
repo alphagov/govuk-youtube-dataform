@@ -125,4 +125,4 @@ FROM GRAIN_SPINE spine
 LEFT JOIN media_feed m USING (media_id, date)
 LEFT JOIN media_change mc USING (media_id, date)
 LEFT JOIN insights_change i USING (media_id, date)
-ORDER BY media_id, date
+
