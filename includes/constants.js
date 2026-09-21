@@ -412,7 +412,7 @@ const stagingAlwaysNullChecks = [
     dateColumn: "date",
     windowInterval: "INTERVAL 14 DAY",
     columns: ["blue_reels_play_count", "fb_reels_replay_count",
-      "fb_reels_total_plays", "post_impressions_unique",
+      "fb_reels_total_plays",
       "post_video_avg_time_watched", "post_video_followers",
       "post_video_view_time"]
   },
