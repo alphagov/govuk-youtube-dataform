@@ -65,7 +65,6 @@ SELECT
   v.description,
   v.created_time,
   v.length,
-  i.post_impressions_unique,
   i.post_video_avg_time_watched,
   i.post_video_followers,
   i.post_video_view_time

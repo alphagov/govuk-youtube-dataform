@@ -68,7 +68,6 @@ SELECT
   i.blue_reels_play_count,
   i.fb_reels_replay_count,
   i.fb_reels_total_plays,
-  i.post_impressions_unique,
   i.post_video_avg_time_watched,
   i.post_video_followers,
   i.post_video_view_time,
