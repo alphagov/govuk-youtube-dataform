@@ -38,7 +38,10 @@ SELECT
     subscribed_status,
     country_code,
     playback_location_type,
-    playback_location_detail,
+    CASE WHEN 
+      playback_location_detail IS NULL THEN "unknown"
+      ELSE playback_location_detail
+    END as playback_location_detail,
     views,
     engaged_views,
     watch_time_minutes,
