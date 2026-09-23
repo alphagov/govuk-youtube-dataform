@@ -92,7 +92,7 @@ const targetAlwaysNullChecks = [
     dateColumn: "date",
     windowInterval: "INTERVAL 14 DAY",
     columns: ["title", "description", "created_time", "length",
-      , "post_video_avg_time_watched",
+      "post_video_avg_time_watched",
       "post_video_followers", "post_video_view_time"]
   },
   {
