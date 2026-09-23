@@ -64,10 +64,8 @@ SELECT
   v.title,
   v.description,
   v.created_time,
-  v.length,
-  i.post_video_avg_time_watched,
-  i.post_video_followers,
-  i.post_video_view_time
+  v.length
 FROM GRAIN_SPINE spine
 LEFT JOIN ${ref("stg_facebook_videos")} v USING (video_id, date)
 LEFT JOIN ${ref("stg_facebook_video_insights")} i USING (video_id, date)
+
