@@ -27,8 +27,8 @@ config {
     shares: "Total shares in the month",
     red_views: "Total YouTube Premium views in the month",
     red_watch_time_minutes: "Total minutes watched by YouTube Premium members in the month",
-    average_view_duration_seconds: "Monthly average view duration in seconds (API only; NULL for DT rows)",
-    average_view_duration_percentage: "Monthly average percentage of video watched (API only; NULL for DT rows)"
+    average_view_duration_seconds: "Monthly average view duration in seconds (API only; 0 for DT rows)",
+    average_view_duration_percentage: "Monthly average percentage of video watched (API only; 0 for DT rows)"
   }
 }
 js {
@@ -76,8 +76,8 @@ WITH union_sources AS (
     SUM(dt.shares)                          AS shares,
     SUM(dt.red_views)                       AS red_views,
     SUM(dt.red_watch_time_minutes)          AS red_watch_time_minutes,
-    NULL                                    AS average_view_duration_seconds,
-    NULL                                    AS average_view_duration_percentage
+    0                                    AS average_view_duration_seconds,
+    0                                    AS average_view_duration_percentage
   FROM ${ref("stg_dt_channel_basic")} dt
   LEFT JOIN ${ref("lookup_video_id_title_mapping")} lv USING (video_id)
   WHERE dt.date >= '${apiDtCutOffDate}'
