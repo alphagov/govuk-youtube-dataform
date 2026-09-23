@@ -38,10 +38,7 @@ SELECT
     subscribed_status,
     country_code,
     playback_location_type,
-    CASE WHEN 
-      playback_location_detail IS NULL THEN "unknown"
-      ELSE playback_location_detail
-    END as playback_location_detail,
+    playback_location_detail,
     views,
     engaged_views,
     watch_time_minutes,
@@ -52,3 +49,4 @@ SELECT
 FROM
   `gds-social-data.govuk_youtube_channel.p_channel_playback_location_a3_govuk_tb`
  WHERE PARSE_DATE('%Y%m%d', date) >= '${apiDtCutOffDate}'
+ AND playback_location_detail IS NOT NULL
