@@ -25,8 +25,8 @@ config {
         watch_time_minutes: "Total estimated minutes watched",
         red_views: "Total YouTube Premium views",
         red_watch_time_minutes: "Total minutes watched by YouTube Premium members",
-        average_view_duration_seconds: "Average view duration in seconds (API only; NULL for DT rows)",
-        average_view_duration_percentage: "Average percentage of video watched (API only; NULL for DT rows)"
+        average_view_duration_seconds: "Average view duration in seconds (API only; 0 for DT rows)",
+        average_view_duration_percentage: "Average percentage of video watched (API only; 0 for DT rows)"
     }
 }
 js {
@@ -67,8 +67,8 @@ SELECT
     SUM(dt.watch_time_minutes)             AS watch_time_minutes,
     SUM(dt.red_views)                      AS red_views,
     SUM(dt.red_watch_time_minutes)         AS red_watch_time_minutes,
-    NULL                                   AS average_view_duration_seconds,
-    NULL                                   AS average_view_duration_percentage
+    0                                      AS average_view_duration_seconds,
+    0                                      AS average_view_duration_percentage
 FROM ${ref("stg_dt_channel_basic")} dt
 LEFT JOIN ${ref("lookup_content_type")} lct
     ON lct.dt_value = dt.live_or_on_demand
