@@ -36,7 +36,8 @@ config {
     avg_retention_15s: "Percentage (0.0-1.0) of viewers still watching at 15 seconds, linearly interpolated between the two adjacent timestamp segments. NULL if the video is shorter than 15 seconds",
     avg_retention_20s: "Percentage (0.0-1.0) of viewers still watching at 20 seconds, linearly interpolated between the two adjacent timestamp segments. NULL if the video is shorter than 20 seconds",
     avg_retention_25s: "Percentage (0.0-1.0) of viewers still watching at 25 seconds, linearly interpolated between the two adjacent timestamp segments. NULL if the video is shorter than 25 seconds",
-    avg_retention_30s: "Percentage (0.0-1.0) of viewers still watching at 30 seconds, linearly interpolated between the two adjacent timestamp segments. NULL if the video is shorter than 30 seconds"
+    avg_retention_30s: "Percentage (0.0-1.0) of viewers still watching at 30 seconds, linearly interpolated between the two adjacent timestamp segments. NULL if the video is shorter than 30 seconds",
+    length: "Video length in seconds, from the raw_facebook_videos snapshot for this video/date. NULL where no video metadata snapshot exists"
   }
 }
 
@@ -46,12 +47,15 @@ js {
   // Bound once to this model's dataset, so the UDF definition below and every call
   // site in the SELECT are guaranteed to resolve to the same function.
   const retention = retentionInterpolation(self());
-  // These three are selected explicitly below rather than generated per second
-  // offset, so they're excluded from the list driving the interpolated columns.
-  const nonPivotColumns = ['average_retention_pct', 'bin_count', 'bin_size_seconds'];
+  // Only avg_retention_<N>s entries drive interpolated columns, with N read from the
+  // name. Everything else in the constants entry (average_retention_pct, bin_count,
+  // bin_size_seconds, length) is selected explicitly below.
+  const retentionOffsetPattern = /^avg_retention_(\d+)s$/;
   const retentionSecondColumns = stagingAlwaysNullChecks.find(
     check => check.table === 'stg_facebook_video_reel_retention'
-  ).columns.filter(column => !nonPivotColumns.includes(column));
+  ).columns
+    .filter(column => retentionOffsetPattern.test(column))
+    .map(column => ({ column, seconds: Number(column.match(retentionOffsetPattern)[1]) }));
 }
 
 -- Persistent, not CREATE TEMP FUNCTION: Dataform runs pre_operations as a separate
@@ -95,7 +99,7 @@ SELECT
   bin_size_seconds,
   average_retention_pct,
   ${retentionSecondColumns.map(
-    column => retention.at(Number(column.match(/\d+/)[0]), column)
+    ({ column, seconds }) => retention.at(seconds, column)
   ).join(',\n  ')},
   length
 FROM BIN_SIZED

@@ -428,8 +428,9 @@ const stagingAlwaysNullChecks = [
     dateColumn: "date",
     windowInterval: "INTERVAL 14 DAY",
     // The avg_retention_*s entries double as the source of truth for which second
-    // offsets stg_facebook_video_reel_retention interpolates; that model derives the
-    // offset from each column name and skips the three non-pivot columns here.
+    // offsets stg_facebook_video_reel_retention interpolates; that model picks up only
+    // entries named avg_retention_<N>s and reads N from the name, so other columns can
+    // be added here freely.
     columns: ["average_retention_pct", "bin_count", "bin_size_seconds","length",
       "avg_retention_5s", "avg_retention_10s",
       "avg_retention_15s", "avg_retention_20s", "avg_retention_25s",
