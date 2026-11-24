@@ -1,4 +1,4 @@
-// Checks on the last few days of Meta loads, so a stopped pipeline, missed day or bad backfill fails while it is fresh
+// Checks the last few days of Meta data so problems with recent loads get flagged while they're fresh
 const lagDays = 2;
 const recentDays = 3;
 const maxLifetimeDip = 0.5;
@@ -6,7 +6,7 @@ const minRecoveryShare = 0.9;
 const minLifetimeValue = 100;
 const minCatalogueShare = 0.9;
 
-// Every Meta raw view, one load per target_date
+// All Meta raw tables, each loaded once a day
 const recentDateTables = [
   "raw_facebook_page_info",
   "raw_facebook_page_insights",
@@ -33,14 +33,14 @@ const recentDateTables = [
   "raw_threads_replies"
 ];
 
-// Snapshot tables only: backfilling the time-windowed daily insights tables is legitimate
+// Snapshot tables can't be backfilled, unlike the daily insights tables
 const snapshotTables = recentDateTables.filter(table => ![
   "raw_facebook_page_insights",
   "raw_instagram_account_insights",
   "raw_threads_account_insights"
 ].includes(table));
 
-// Post lists with a publish time
+// Post tables and their published date column
 const publishedTables = [
   {table: "raw_facebook_posts", idColumn: "post_id", publishedColumn: "created_time"},
   {table: "raw_facebook_videos", idColumn: "video_id", publishedColumn: "created_time"},
@@ -49,7 +49,7 @@ const publishedTables = [
   {table: "raw_threads_replies", idColumn: "reply_id", publishedColumn: "timestamp"}
 ];
 
-// EAV insights tables with lifetime metrics
+// Insights tables with lifetime totals
 const lifetimeInsightTables = [
   {table: "raw_facebook_post_insights", idColumn: "post_id"},
   {table: "raw_facebook_video_insights", idColumn: "video_id"},
@@ -57,14 +57,14 @@ const lifetimeInsightTables = [
   {table: "raw_threads_media_insights", idColumn: "media_id"}
 ];
 
-// Post lists that should not shrink between snapshots
+// Replies get deleted too often to check for shrinking
 const catalogueTables = publishedTables.filter(({table}) => table !== "raw_threads_replies");
 
 const windowStart = `DATE_SUB(CURRENT_DATE(), INTERVAL ${lagDays + recentDays - 1} DAY)`;
 const windowEnd = `DATE_SUB(CURRENT_DATE(), INTERVAL ${lagDays} DAY)`;
 const lookbackStart = `DATE_SUB(CURRENT_DATE(), INTERVAL ${lagDays + recentDays + 7} DAY)`;
 
-// Fails if any recent expected day is missing
+// Fails if a recent day is missing, e.g. a pipeline stopped
 recentDateTables.forEach(table => {
   assert(`${table}_recent_dates_check`)
     .description(`Fails if any of the last ${recentDays} expected days are missing from ${table}`)
@@ -85,7 +85,7 @@ recentDateTables.forEach(table => {
     `);
 });
 
-// Fails if one load wrote several dates, i.e. a backfill stamped today's values onto past dates
+// Fails if one load wrote several dates, meaning a backfill copied today's figures onto past days
 snapshotTables.forEach(table => {
   assert(`${table}_single_load_per_snapshot_check`)
     .description(`Fails if one load in the last ${recentDays} days wrote more than one target_date to ${table}`)
@@ -102,7 +102,7 @@ snapshotTables.forEach(table => {
     `);
 });
 
-// Fails if a post appears in a snapshot dated more than a day before it was published
+// Fails if a post appears more than a day before it was published
 publishedTables.forEach(({table, idColumn, publishedColumn}) => {
   assert(`${table}_not_before_published_check`)
     .description(`Fails if ${table} has a snapshot dated more than a day before the post was published`)
@@ -114,7 +114,7 @@ publishedTables.forEach(({table, idColumn, publishedColumn}) => {
     `);
 });
 
-// Fails on a bad pull: a lifetime total dropping to 0, or dipping and recovering (Meta's monthly restatements stay down, so are ignored)
+// Fails if a lifetime total drops to zero or dips and bounces back; drops that stay down are Meta restating figures
 lifetimeInsightTables.forEach(({table, idColumn}) => {
   assert(`${table}_lifetime_bad_pull_check`)
     .description(`Fails if a lifetime metric in ${table} dropped to 0, or dipped and recovered at the next snapshot`)
@@ -143,7 +143,7 @@ lifetimeInsightTables.forEach(({table, idColumn}) => {
     `);
 });
 
-// Fails if a snapshot lists under 90% of the previous snapshot's posts, i.e. a partial pull
+// Fails if a snapshot is missing a chunk of posts compared with the day before
 catalogueTables.forEach(({table, idColumn}) => {
   assert(`${table}_catalogue_shrink_check`)
     .description(`Fails if a snapshot of ${table} lists under ${minCatalogueShare * 100}% of the previous snapshot's items`)
