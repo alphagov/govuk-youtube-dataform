@@ -5,7 +5,9 @@ const {targetAlwaysNullChecks, stagingAlwaysNullChecks} = require('includes/cons
 // A real bounded date filter already satisfies requirePartitionFilter on target
 // tables, so no tautological guard is needed here.
 function alwaysNullAssertion(check) {
-  const {table, dateColumn, windowInterval, columns} = check;
+  const {table, dateColumn, windowInterval, nullAllowed = []} = check;
+  // nullAllowed lists columns that are expected to be empty, e.g. metrics Meta no longer returns
+  const columns = check.columns.filter(column => !nullAllowed.includes(column));
   assert(`${table}_always_null_check`)
     .description(`Fails if any column in ${table} is 100% NULL across all rows in the last ${windowInterval.toLowerCase()}`)
     .query(ctx => `

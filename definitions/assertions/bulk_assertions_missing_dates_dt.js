@@ -11,6 +11,9 @@ const pChannelTables = [
   "raw_p_channel_traffic_source_a3_govuk_tb",
 ];
 
+// YouTube only writes the sharing service report on days with at least one share
+const onlyDaysWithShares = ["raw_p_channel_sharing_service_a1_govuk_tb"];
+
 pChannelTables.forEach(tableName => {
   assert(`${tableName}_date_spine_check`)
     .description(`Fails if any date between ${apiDtCutOffDate} and two days ago is missing from ${tableName}`)
@@ -21,6 +24,9 @@ pChannelTables.forEach(tableName => {
           DATE('${apiDtCutOffDate}'),
           DATE_SUB(CURRENT_DATE(), INTERVAL 3 DAY)
         )) AS date
+        ${onlyDaysWithShares.includes(tableName) ? `WHERE date IN (
+          SELECT date FROM ${ctx.ref("raw_p_channel_basic_a3_govuk_tb")} GROUP BY date HAVING SUM(shares) > 0
+        )` : ""}
       ),
       dates_in_table AS (
         SELECT DISTINCT date
