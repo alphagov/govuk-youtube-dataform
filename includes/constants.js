@@ -93,7 +93,9 @@ const targetAlwaysNullChecks = [
     windowInterval: "INTERVAL 14 DAY",
     columns: ["title", "description", "created_time", "length",
       "post_impressions_unique", "post_video_avg_time_watched",
-      "post_video_followers", "post_video_view_time"]
+      "post_video_followers", "post_video_view_time"],
+    // Meta only returns these for reels, which this table excludes, and stopped sending post_impressions_unique after July 2026
+    nullAllowed: ["title", "post_impressions_unique", "post_video_avg_time_watched", "post_video_view_time"]
   },
   {
     table: "tgt_video_by_content_type",
@@ -101,7 +103,9 @@ const targetAlwaysNullChecks = [
     windowInterval: "INTERVAL 14 DAY",
     columns: ["content_type", "views", "engaged_views", "watch_time_minutes",
       "red_views", "red_watch_time_minutes", "average_view_duration_seconds",
-      "average_view_duration_percentage"]
+      "average_view_duration_percentage"],
+    // Deliberately NULL for Data Transfer rows, which is every row since the March 2026 cutover
+    nullAllowed: ["average_view_duration_seconds", "average_view_duration_percentage"]
   },
   {
     table: "tgt_video_by_country",
@@ -144,7 +148,9 @@ const targetAlwaysNullChecks = [
     columns: ["video_title", "views", "engaged_views", "watch_time_minutes",
       "comments", "likes", "dislikes", "shares", "red_views",
       "red_watch_time_minutes", "average_view_duration_seconds",
-      "average_view_duration_percentage"]
+      "average_view_duration_percentage"],
+    // Deliberately NULL for Data Transfer rows, which is every row since the March 2026 cutover
+    nullAllowed: ["average_view_duration_seconds", "average_view_duration_percentage"]
   },
   {
     table: "tgt_video_performance_monthly",
@@ -153,7 +159,9 @@ const targetAlwaysNullChecks = [
     columns: ["video_title", "views", "engaged_views", "watch_time_minutes",
       "comments", "likes", "dislikes", "shares", "red_views",
       "red_watch_time_minutes", "average_view_duration_seconds",
-      "average_view_duration_percentage"]
+      "average_view_duration_percentage"],
+    // Deliberately NULL for Data Transfer rows, which is every row since the March 2026 cutover
+    nullAllowed: ["average_view_duration_seconds", "average_view_duration_percentage"]
   },
 
   // Column order matches each model's SELECT: lifetime block, then _daily_change block, then
@@ -414,7 +422,9 @@ const stagingAlwaysNullChecks = [
     columns: ["blue_reels_play_count", "fb_reels_replay_count",
       "fb_reels_total_plays", "post_impressions_unique",
       "post_video_avg_time_watched", "post_video_followers",
-      "post_video_view_time"]
+      "post_video_view_time"],
+    // Kept as a column because this list builds the table, but Meta stopped sending it after July 2026
+    nullAllowed: ["post_impressions_unique"]
   },
   {
     table: "stg_facebook_video_reel_reactions",
